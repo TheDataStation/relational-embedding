@@ -1,0 +1,417 @@
+import argparse
+import csv
+import os
+import pandas as pd
+from os import listdir
+from collections import defaultdict
+from os.path import isfile, join
+from tqdm import tqdm
+import numpy as np
+
+from relational_embedder.data_prep import data_prep_utils as dpu
+
+RELATION_STRATEGY = ['row_and_col', 'row', 'col']
+INTEGER_STRATEGY = ['skip', 'stringify', 'augment']
+TEXTIFICATION_GRAIN = ['cell', 'token']
+OUTPUT_FORMAT = ['sequence_text', 'windowed_text']
+
+
+def _read_rows_from_dataframe(df, columns, integer_strategy='skip'):
+    for index, el in df.iterrows():
+        for c in columns:
+            cell_value = el[c]
+            # We check the cell value is valid before continuing
+            if not dpu.valid_cell(cell_value):
+                continue
+            # If strategy is skip, we check that first
+            if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+                if integer_strategy == 'skip':
+                    continue  # no numerical columns
+                elif integer_strategy == 'stringify':
+                    cell_value = str(el[c])
+                elif integer_strategy == 'augment':
+                    cell_value = str(c) + "_<#>_" + str(el[c])  # special symbol to tell apart augmentation from space
+            yield cell_value, index
+
+
+def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
+    for c in columns:
+        # If strategy is skip, we check that first
+        if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+            if integer_strategy == 'skip':
+                continue  # no numerical columns
+            data_values = df[c]
+            for cell_value in data_values:
+                # We check the cell value is valid before continuing
+                if not dpu.valid_cell(cell_value):
+                    continue
+                elif integer_strategy == 'stringify':
+                    cell_value = str(cell_value)
+                elif integer_strategy == 'augment':
+                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to tell apart augmentation from space
+                yield cell_value, c
+        else:
+            data_values = df[c]
+            for cell_value in data_values:
+                # We check the cell value is valid before continuing
+                if not dpu.valid_cell(cell_value):
+                    continue
+                yield cell_value, c
+
+
+def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
+    try:
+        os.remove(output_file)
+    except FileNotFoundError:
+        print("Creating new file for writing data")
+
+    total = len(paths)
+    current = 0
+    for path in tqdm(paths):
+        if debug:
+            print(str(current) + "/" + str(total))
+            current += 1
+        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # Check if relation is valid. Otherwise skip to next
+        if not dpu.valid_relation(df):
+            continue
+        columns = df.columns
+        with open(output_file, 'a') as f:
+            # Rows
+            for cell_value in _read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    f.write(" " + cv)
+            # Columns
+            for cell_value in _read_columns_from_dataframe(df, columns):
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    f.write(" " + cv)
+
+
+def read_rows_values(path, integer_strategy, grain, dataframe=None):
+    """
+    Returns a map (row index -> [values]
+    :param path:
+    :param integer_strategy:
+    :param grain:
+    :param dataframe:
+    :return:
+    """
+    row_values = defaultdict(list)
+    df = dataframe
+    if df is None:
+        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # Check if relation is valid. Otherwise skip to next
+        if not dpu.valid_relation(df):
+            return None
+    columns = df.columns
+
+    # Rows
+    for cell_value, index in _read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+        # If valid, we clean and format it and return it
+        values = dpu.encode_cell(cell_value, grain=grain)
+        for cv in values:
+            row_values[index].append(cv)
+    return row_values
+
+
+def serialize_row(paths, output_file, integer_strategy=None, grain=None, debug=False):
+    try:
+        os.remove(output_file)
+    except FileNotFoundError:
+        print("Creating new file for writing data")
+
+    total = len(paths)
+    current = 0
+    for path in tqdm(paths):
+        if debug:
+            print(str(current) + "/" + str(total))
+            current += 1
+
+        map_rowidx_values = read_rows_values(path, integer_strategy, grain)
+        values = []
+        # unpack map into list of values
+        for index, values in map_rowidx_values.items():
+            values.extend(values)
+        with open(output_file, 'a') as f:
+            # for rowv in values:
+            data_string = " ".join(values)
+            f.write(data_string)
+
+        # df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # # Check if relation is valid. Otherwise skip to next
+        # if not dpu.valid_relation(df):
+        #     continue
+        # columns = df.columns
+        #
+        # with open(output_file, 'a') as f:
+        #     # Rows
+        #     for cell_value in _read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+        #         # If valid, we clean and format it and return it
+        #         values = dpu.encode_cell(cell_value, grain=grain)
+        #         for cv in values:
+        #             f.write(" " + cv)
+
+
+def read_column_values(path, integer_strategy, grain, dataframe=None):
+    """
+    Reads relation in path, returns a map (column -> [values])
+    :param path:
+    :param integer_strategy:
+    :param grain:
+    :return:
+    """
+    to_return = defaultdict(list)
+    df = dataframe
+    if df is None:
+        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # Filtering out non-valid relations
+        if not dpu.valid_relation(df):
+            return None
+    columns = df.columns
+    # Columns
+    for cell_value, c in _read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
+        values = dpu.encode_cell(cell_value, grain=grain)
+        for cv in values:
+            # to_return.append(cv)
+            to_return[c].append(cv)
+    return to_return
+
+
+def serialize_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
+    try:
+        os.remove(output_file)
+    except FileNotFoundError:
+        print("Creating new file for writing data")
+
+    total = len(paths)
+    current = 0
+    for path in tqdm(paths):
+        if debug:
+            print(str(current) + "/" + str(total))
+            current += 1
+
+        map_column_values = read_column_values(path, integer_strategy, grain)
+        # we need a list of values only, so we unpack the dictionary
+        values = []
+        for k, v in map_column_values.items():
+            values.extend(v)
+        with open(output_file, 'a') as f:
+            data_string = " ".join(map_column_values)
+            f.write(data_string)
+
+        # df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # # Filtering out non-valid relations
+        # if not dpu.valid_relation(df):
+        #     continue
+        # columns = df.columns
+        # with open(output_file, 'a') as f:
+        #     # Columns
+        #     for cell_value in _read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
+        #         values = dpu.encode_cell(cell_value, grain=grain)
+        #         for cv in values:
+        #             f.write(" " + cv)
+
+
+def window_row(paths, output_file, integer_strategy=None, grain=None, debug=False):
+    try:
+        os.remove(output_file)
+    except FileNotFoundError:
+        print("Creating new file for writing data")
+
+    total = len(paths)
+    current = 0
+    for path in tqdm(paths):
+        if debug:
+            print(str(current) + "/" + str(total))
+            current += 1
+        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # Check for valid relations only
+        if not dpu.valid_relation(df):
+            continue
+        columns = df.columns
+        f = csv.writer(open(output_file, 'a'), delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+        # Rows
+        for index, el in df.iterrows():
+            row = []
+            for c in columns:
+                if integer_strategy == 'skip':
+                    if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32,
+                                       np.float64]:
+                        continue  # no numerical columns
+                cell_value = el[c]
+                if not dpu.valid_cell(cell_value):
+                    continue
+                elif integer_strategy == 'stringify':
+                    cell_value = str(cell_value)
+                elif integer_strategy == 'augment':
+                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    row.append(cv)
+            if len(row) > 0:
+                f.writerow(row)
+        # TODO: why is it necessary to indicate end of relation?
+        f.writerow(["~R!RR*~"])
+
+
+def window_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
+    try:
+        os.remove(output_file)
+    except FileNotFoundError:
+        print("Creating new file for writing data")
+
+    total = len(paths)
+    current = 0
+    for path in tqdm(paths):
+        if debug:
+            print(str(current) + "/" + str(total))
+            current += 1
+        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # Check for valid relations only
+        if not dpu.valid_relation(df):
+            continue
+        columns = df.columns
+        f = csv.writer(open(output_file, 'a'), delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+        # Columns
+        for c in columns:
+            if integer_strategy == 'skip':
+                if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+                    continue  # no numerical columns
+            col_data = df[c]
+            row = []
+            for cell_value in col_data:
+                if not dpu.valid_cell(cell_value):
+                    continue
+                elif integer_strategy == 'stringify':
+                    cell_value = str(cell_value)
+                elif integer_strategy == 'augment':
+                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    row.append(cv)
+            if len(row) > 0:
+                f.writerow(row)
+        # TODO: why is it necessary to indicate end of relation?
+        f.writerow(["~R!RR*~"])
+
+
+def window_row_and_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
+    try:
+        os.remove(output_file)
+    except FileNotFoundError:
+        print("Creating new file for writing data")
+
+    total = len(paths)
+    current = 0
+    for path in tqdm(paths):
+        if debug:
+            print(str(current) + "/" + str(total))
+            current += 1
+        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        # Check for valid relations only
+        if not dpu.valid_relation(df):
+            continue
+        columns = df.columns
+        f = csv.writer(open(output_file, 'a'), delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+        # Rows
+        for index, el in df.iterrows():
+            row = []
+            for c in columns:
+                if integer_strategy == 'skip':
+                    if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32,
+                                       np.float64]:
+                        continue  # no numerical columns
+                cell_value = el[c]
+                if not dpu.valid_cell(cell_value):
+                    continue
+                elif integer_strategy == 'stringify':
+                    cell_value = str(cell_value)
+                elif integer_strategy == 'augment':
+                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    row.append(cv)
+            if len(row) > 0:
+                f.writerow(row)
+        # Columns
+        for c in columns:
+            if integer_strategy == 'skip':
+                if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+                    continue  # no numerical columns
+            col_data = df[c]
+            row = []
+            for cell_value in col_data:
+                if not dpu.valid_cell(cell_value):
+                    continue
+                elif integer_strategy == 'stringify':
+                    cell_value = str(cell_value)
+                elif integer_strategy == 'augment':
+                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    row.append(cv)
+            if len(row) > 0:
+                f.writerow(row)
+        # TODO: why is it necessary to indicate end of relation?
+        f.writerow(["~R!RR*~"])
+
+
+def all_files_in_path(path):
+    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
+    return fs
+
+
+def main(args):
+    path = args.dataset
+    relation_strategy = args.relation_strategy
+    integer_strategy = args.integer_strategy
+    grain = args.grain
+    output = args.output
+    debug = args.debug
+    output_format = args.output_format
+
+    fs = all_files_in_path(path)
+    if output_format == "sequence_text":
+        if relation_strategy == "row":
+            serialize_row(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
+        elif relation_strategy == "col":
+            serialize_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
+        elif relation_strategy == "row_and_col":
+            serialize_row_and_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
+        else:
+            print("Mode not supported. <row, col, row_and_col>")
+    elif output_format == 'windowed_text':
+        if relation_strategy == "row":
+            window_row(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
+        elif relation_strategy == "col":
+            window_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
+        elif relation_strategy == "row_and_col":
+            window_row_and_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
+        else:
+            print("Mode not supported. <row, col, row_and_col>")
+
+    print("Done!")
+
+
+if __name__ == "__main__":
+    print("Textify relation")
+
+    # Argument parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str, help='path to collection of relations')
+    parser.add_argument('--relation_strategy', default='row_and_col', type=str, choices=RELATION_STRATEGY,
+                        help='Strategy to capture relationships, row, col, or row_and_col')
+    parser.add_argument('--integer_strategy', default='skip', type=str, choices=INTEGER_STRATEGY,
+                        help='strategy to determine how to deal with integers')
+    parser.add_argument('--grain', default='cell', type=str, choices=TEXTIFICATION_GRAIN,
+                        help='choose whether to process individual tokens (token), or entire cells (cell)')
+    parser.add_argument('--output', type=str, default='textified.txt', help='path where to write the output file')
+    parser.add_argument('--output_format', default='sequence_text', choices=OUTPUT_FORMAT,
+                        help='sequence_text or windowed_text')
+    parser.add_argument('--debug', default=False, help='whether to run program in debug mode or not')
+
+    args = parser.parse_args()
+
+    main(args)
