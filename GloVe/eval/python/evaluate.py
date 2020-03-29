@@ -16,6 +16,8 @@ def main():
             vectors[vals[0]] = [float(x) for x in vals[1:]]
 
     vocab_size = len(words)
+    print("vocab size:", vocab_size)
+    print("vectors size", len(vectors))
     vocab = {w: idx for idx, w in enumerate(words)}
     ivocab = {idx: w for idx, w in enumerate(words)}
 
