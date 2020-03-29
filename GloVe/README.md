@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Embedding
 =======
 ## GloVe: Global Vectors for Word Representation
@@ -39,4 +38,4 @@ The demo.sh script downloads a small corpus, consisting of the first 100M charac
 
 ### License
 All work contained in this package is licensed under the Apache License, Version 2.0. See the include LICENSE file.
->>>>>>> 66c34b22b17d51d4b842d43f4df04507f5214bdd
+
