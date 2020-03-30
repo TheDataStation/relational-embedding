@@ -1,21 +1,44 @@
 import csv
+import sys
 import pandas as pd
+import numpy as np 
+sys.path.append('..')
+from textification import textify_relation as tr
+from relational_embedder.data_prep import data_prep_utils as dpu
 
 name_basics_file = "../data/imdb/name.basics.tsv"
+
+# Assume that textification strategy is skip (integer), row & col, sequence text
+def textify_df(sample_query):
+    columns = sample_query.columns
+    query_after_textification = [] 
+    for index, el in sample_query.iterrows():
+        query_row = []
+        for c in columns:
+            cell_value = el[c]
+            if not dpu.valid_cell(cell_value):
+                continue
+            if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+                if integer_strategy == 'skip':
+                    continue 
+            query_row.append(dpu.encode_cell(cell_value, grain='cell'))
+        query_after_textification.append(query_row)
+    return query_after_textification
 
 def obtain_ground_truth_name(sample_size = 1000):
     df = pd.read_csv(name_basics_file, encoding = 'latin1', sep = '\t')
     sample = df.sample(n = sample_size)
-    sample_query = sample.drop(columns = ['primaryName']).values.tolist()
-    ground_truth = sample['primaryName'].values.tolist()
-    return sample_query, ground_truth 
+
+    ground_truth = textify_df(sample[['primaryName']])
+    sample_query = textify_df(sample.drop(['primaryName'], axis = 1))
+    return sample_query.values.tolist(), ground_truth.values.tolist()
 
 def obtain_ground_truth_profession(sample_size = 1000):
     df = pd.read_csv(name_basics_file, encoding = 'latin1', sep = '\t')
     sample = df.sample(n = sample_size)
-    sample_query = sample.drop(columns = ['primaryProfession']).values.tolist()
-    ground_truth = sample['primaryProfession'].values.tolist()
-    return sample_query, ground_truth 
+    ground_truth = textify_df(sample['primaryProfession'])
+    sample_query = textify_df(sample.drop(['primaryProfession'])
+    return sample_query.values.tolist(), ground_truth.values.tolist()
 
 def measure_quality(ground_truth, predicted_truth):
     precision = [] 

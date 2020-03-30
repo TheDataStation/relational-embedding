@@ -42,6 +42,10 @@ build/*
 # Data set 
 data/*
 
+# Trained models and texification file
+*.bin
+*.txt
+
 # Byte-compiled / optimized / DLL files
 */__pycache__/
 *.py[cod]
