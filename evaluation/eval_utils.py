@@ -16,6 +16,8 @@ def textify_df(sample_query):
         query_row = []
         for c in columns:
             cell_value = el[c]
+            if (cell_value == "\\N"):
+                continue
             if not dpu.valid_cell(cell_value):
                 continue
             if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:

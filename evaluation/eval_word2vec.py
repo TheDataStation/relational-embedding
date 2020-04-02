@@ -1,11 +1,8 @@
-from gensim import word2vec
+from gensim.models import Word2Vec
 import eval_utils as EU
 
 K = 20 
 word2vec_model_path = '../word2vec/word2vec.bin'
-
-def word2vec_get_similar(query):
-    return None, None
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")
