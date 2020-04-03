@@ -1,7 +1,7 @@
 # Eval Script for GloVe
 import sys 
 import numpy as np
-import visualizer as V
+import visualizer as VS
 
 path_to_vocab = "../GloVe/vocab.txt"
 path_to_vector_file = "../GloVe/vectors.txt"
@@ -64,6 +64,12 @@ def distance(W, vocab, ivocab, input_term, K = 20):
         topk_dist.append(dist[x])
     return topk_vocab, topk_dist
 
+def similarity(a, b):
+    if a not in vocab or b not in vocab: 
+        print("a or b not in vocabulary")
+        return -1 
+    return np.dot(W[vocab[a], :], W[vocab[b], :])
+
 if __name__ == "__main__":
     print("Evaluating results with GloVe model:")
 
@@ -80,12 +86,12 @@ if __name__ == "__main__":
         topk_words, topk_metrics = distance(W, vocab, ivocab, topn=K)
         dist = [] 
         for word in query[i]:
-            dist.append(word2vec.wv.similarity(word, ground_truth[i]))
-        
+            dist.append(similarity(word, ground_truth[i]))
         results.append(topk_words)
         results_dist.append(dist)
+        print("Query", i)
+        print("Closest k words", topk_words)
+        print("Distance from truth to other inputs", dist)
 
     # Plot the vectors
-    V.display_pca_scatterplot(model, sample_query[0], 300, output = "GloVe_eval.png")
-
-    # 
+    VS.display_pca_scatterplot(model, sample_query[0], 300, output = "GloVe_eval.png", vocab_list = list(model.keys()))

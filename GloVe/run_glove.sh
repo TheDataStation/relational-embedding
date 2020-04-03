@@ -6,7 +6,7 @@ set -e
 
 make
 
-CORPUS=../textified.txt
+CORPUS=../textified_trial_2.txt
 VOCAB_FILE=vocab.txt
 COOCCURRENCE_FILE=cooccurrence.bin
 COOCCURRENCE_SHUF_FILE=cooccurrence.shuf.bin
@@ -16,7 +16,7 @@ VERBOSE=2
 MEMORY=4.0
 VOCAB_MIN_COUNT=5
 VECTOR_SIZE=200
-MAX_ITER=20
+MAX_ITER=30
 WINDOW_SIZE=10
 BINARY=2
 NUM_THREADS=8

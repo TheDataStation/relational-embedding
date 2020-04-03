@@ -1,8 +1,9 @@
 from gensim.models import Word2Vec
 import eval_utils as EU
+import visualizer as VS
 
 K = 20 
-word2vec_model_path = '../word2vec/word2vec.bin'
+word2vec_model_path = '../word2vec/word2vec_trial_2.bin'
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")
@@ -27,8 +28,8 @@ if __name__ == "__main__":
 
     # measure quality 
     precision = EU.measure_quality(ground_truth, results)
-    print(precision)
 
-    # Save evaluation to file
+    # Plot Similarity 
+    VS.display_pca_scatterplot(model, sample_query[0], 300, output = "word2vec_eval.png", vocab_list = model.vocab)
 
     

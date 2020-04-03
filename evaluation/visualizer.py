@@ -6,11 +6,11 @@ plt.switch_backend('agg')
 import word2vec
 from sklearn.decomposition import PCA
 
-def display_pca_scatterplot(model, words=None, sample=0, output = "display.png"):
+def display_pca_scatterplot(model, words=None, sample=0, output = "display.png", vocab_list = model.vocab):
     colors = ['r'] * len(words) + ['b'] * sample
     if sample > 0:
         words_original = words
-        words = np.concatenate((np.array(words), np.random.choice(list(model.vocab), sample)), axis=None)
+        words = np.concatenate((np.array(words), np.random.choice(list(vocab_list), sample)), axis=None)
         
     word_vectors = np.array([model[w] for w in words])
 
@@ -32,4 +32,4 @@ if __name__ == "__main__":
 
     # Display with PCA on two dimensions
     cells_array = ["('tt0072308'_'titleid')", "('nm0000001'_'nconst')", "('tt0053137'_'titleid')", "('tt0043044'_'titleid')", "('tt0050419'_'titleid')"]
-    display_pca_scatterplot(model, cells_array, 300, output = "dummy_name.png")
+    display_pca_scatterplot(model, cells_array, 300, output = "dummy_name.png", vocab_list = model.vocab)
