@@ -32,7 +32,7 @@
 *.dSYM/
 
 
-build/*
+*/build/*
 *.swp
 
 # OS X stuff
@@ -45,7 +45,22 @@ data/*
 # Trained models and texification file
 *.bin
 *.txt
+*.emb
+*.edgelist
 
 # Byte-compiled / optimized / DLL files
 */__pycache__/
 *.py[cod]
+
+.DS_Store
+
+# Node2Vec 
+.gradle
+*.iml
+*.ipr
+*.iws
+*.log
+.classpath
+.project
+.settings
+.idea

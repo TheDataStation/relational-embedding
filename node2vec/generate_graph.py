@@ -77,8 +77,8 @@ def generate_graph(args):
         textified_cols = textify_df_col(df)
         for col in textified_cols:
             for row in range(len(col) - 1):
-                for entry_x in row[col]:
-                    for entry_y in row[col+1]:
+                for entry_x in col[row]:
+                    for entry_y in col[row+1]:
                         graph.add_edge(entry_x, entry_y, weight = 1)
                     
     nx.write_edgelist(graph, args.output)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--output', 
         type=str, 
-        default='./graph_textified.edgelist'
+        default='./graph/textified.edgelist'
     )
 
     args = parser.parse_args()
