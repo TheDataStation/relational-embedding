@@ -55,6 +55,8 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
         else:
             data_values = df[c]
             for cell_value in data_values:
+                if (cell_value == "\\N"):
+                    continue
                 # We check the cell value is valid before continuing
                 if not dpu.valid_cell(cell_value):
                     continue
