@@ -6,7 +6,7 @@ plt.switch_backend('agg')
 import word2vec
 from sklearn.decomposition import PCA
 
-def display_pca_scatterplot(model, words=None, sample=0, output = "display.png", vocab_list = model.vocab):
+def display_pca_scatterplot(model, words=None, sample=0, output = "display.png", vocab_list = []):
     colors = ['r'] * len(words) + ['b'] * sample
     if sample > 0:
         words_original = words

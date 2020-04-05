@@ -2,9 +2,10 @@
 import sys 
 import numpy as np
 import visualizer as VS
+import eval_utils as EU 
 
 path_to_vocab = "../GloVe/vocab.txt"
-path_to_vector_file = "../GloVe/vectors.txt"
+path_to_vector_file = "../GloVe/glove_vectors.txt"
 
 def load():
     with open(path_to_vocab, 'r') as f:
@@ -14,18 +15,18 @@ def load():
         for line in f:
             vals = line.rstrip().split(' ')
             vectors[vals[0]] = [float(x) for x in vals[1:]]
-
+    
     vocab_size = len(words)
     vocab = {w: idx for idx, w in enumerate(words)}
     ivocab = {idx: w for idx, w in enumerate(words)}
-
+    
     vector_dim = len(vectors[ivocab[0]])
     W = np.zeros((vocab_size, vector_dim))
     for word, v in vectors.items():
         if word == '<unk>':
             continue
         W[vocab[word], :] = v
-
+    
     # normalize each word vector to unit variance
     W_norm = np.zeros(W.shape)
     d = (np.sum(W ** 2, 1) ** (0.5))
@@ -76,22 +77,24 @@ if __name__ == "__main__":
     # Obtain queries and ground truth 
     sample_query, ground_truth = EU.obtain_ground_truth_name(20)
 
-    # Load model 
+    # Load model
+    print("")
     W, vocab, ivocab = load()
+    print("Loading finished")
 
     # Get top K words and metrics from word2vec model
-    results = []
-    results_dist = []
-    for i in len(sample_query):
-        topk_words, topk_metrics = distance(W, vocab, ivocab, topn=K)
-        dist = [] 
-        for word in query[i]:
-            dist.append(similarity(word, ground_truth[i]))
-        results.append(topk_words)
-        results_dist.append(dist)
-        print("Query", i)
-        print("Closest k words", topk_words)
-        print("Distance from truth to other inputs", dist)
+    # results = []
+    # results_dist = []
+    # for i in len(sample_query):
+    #     topk_words, topk_metrics = distance(W, vocab, ivocab, topn=K)
+    #     dist = [] 
+    #     for word in query[i]:
+    #         dist.append(similarity(word, ground_truth[i]))
+    #     results.append(topk_words)
+    #     results_dist.append(dist)
+    #     print("Query", i)
+    #     print("Closest k words", topk_words)
+    #     print("Distance from truth to other inputs", dist)
 
     # Plot the vectors
-    VS.display_pca_scatterplot(model, sample_query[0], 300, output = "GloVe_eval.png", vocab_list = list(model.keys()))
+    VS.display_pca_scatterplot(model, sample_query[0], 300, output = "GloVe_eval.png", vocab_list = list(vocab.keys()))
