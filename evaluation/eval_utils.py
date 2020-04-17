@@ -2,9 +2,8 @@ import csv
 import sys
 import pandas as pd
 import numpy as np 
-sys.path.append('..')
-from textification import textify_relation as tr
 from relational_embedder.data_prep import data_prep_utils as dpu
+from textification import textify_relation as tr
 
 name_basics_file = "../data/imdb/name.basics.tsv"
 
@@ -33,6 +32,7 @@ def obtain_ground_truth_name(sample_size = 1000):
 
     ground_truth = textify_df(sample[['primaryName']])
     sample_query = textify_df(sample.drop(['primaryName'], axis = 1))
+    print(sample_query, ground_truth)
     return sample_query, ground_truth
 
 # def obtain_ground_truth_profession(sample_size = 1000):

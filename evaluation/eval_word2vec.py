@@ -1,9 +1,13 @@
 from gensim.models import Word2Vec
+import sys
+sys.path.append('..')
+
 import eval_utils as EU
 import visualizer as VS
+import word2vec
 
 K = 20 
-word2vec_model_path = '../word2vec/word2vec_trial_2.bin'
+word2vec_model_path = "../word2vec/word2vec_neg_20_i50.bin"
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")

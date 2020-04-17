@@ -27,9 +27,9 @@ def display_pca_scatterplot(model, words=None, sample=0, output = "display.png",
 
 if __name__ == "__main__":
     # used embeddings from word2vec for testing purposes
-    path_to_model = "../word2vec/word2vec_trial_2.bin"
+    path_to_model = "./word2vec/word2vec_neg_20_i50.bin"
     model = word2vec.load(path_to_model, encoding = "ISO-8859-1")
 
     # Display with PCA on two dimensions
     cells_array = ["('tt0072308'_'titleid')", "('nm0000001'_'nconst')", "('tt0053137'_'titleid')", "('tt0043044'_'titleid')", "('tt0050419'_'titleid')"]
-    display_pca_scatterplot(model, cells_array, 300, output = "dummy_name.png", vocab_list = model.vocab)
+    display_pca_scatterplot(model, cells_array, 600, output = "dummy_name.png", vocab_list = model.vocab)
