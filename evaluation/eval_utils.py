@@ -22,17 +22,16 @@ def textify_df(df):
             if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
                 if integer_strategy == 'skip':
                     continue 
-            query_row.append(dpu.encode_cell((cell_value, index), grain='cell'))
+            query_row.append(dpu.encode_cell((cell_value, c), grain='cell'))
         query_after_textification.append(query_row)
     return query_after_textification
 
 def obtain_ground_truth_name(sample_size = 1000):
     df = pd.read_csv(name_basics_file, encoding = 'latin1', sep = '\t')
-    sample = df.sample(n = sample_size)
+    sample = df.head(n = sample_size)
 
     ground_truth = textify_df(sample[['primaryName']])
     sample_query = textify_df(sample.drop(['primaryName'], axis = 1))
-    print(sample_query, ground_truth)
     return sample_query, ground_truth
 
 # def obtain_ground_truth_profession(sample_size = 1000):

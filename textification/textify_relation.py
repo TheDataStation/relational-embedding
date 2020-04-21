@@ -75,7 +75,7 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        df = pd.read_csv(path, encoding='latin1', sep=';')
         # Check if relation is valid. Otherwise skip to next
         if not dpu.valid_relation(df):
             continue
@@ -105,7 +105,7 @@ def read_rows_values(path, integer_strategy, grain, dataframe=None):
     row_values = defaultdict(list)
     df = dataframe
     if df is None:
-        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        df = pd.read_csv(path, encoding='latin1', sep=';')
         # Check if relation is valid. Otherwise skip to next
         if not dpu.valid_relation(df):
             return None
@@ -169,7 +169,7 @@ def read_column_values(path, integer_strategy, grain, dataframe=None):
     to_return = defaultdict(list)
     df = dataframe
     if df is None:
-        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        df = pd.read_csv(path, encoding='latin1', sep=';')
         # Filtering out non-valid relations
         if not dpu.valid_relation(df):
             return None
@@ -230,7 +230,7 @@ def window_row(paths, output_file, integer_strategy=None, grain=None, debug=Fals
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        df = pd.read_csv(path, encoding='latin1', sep=';')
         # Check for valid relations only
         if not dpu.valid_relation(df):
             continue
@@ -272,7 +272,7 @@ def window_column(paths, output_file, integer_strategy=None, grain=None, debug=F
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        df = pd.read_csv(path, encoding='latin1', sep=';')
         # Check for valid relations only
         if not dpu.valid_relation(df):
             continue
@@ -313,7 +313,7 @@ def window_row_and_column(paths, output_file, integer_strategy=None, grain=None,
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep='\t')
+        df = pd.read_csv(path, encoding='latin1', sep=';')
         # Check for valid relations only
         if not dpu.valid_relation(df):
             continue
@@ -395,7 +395,8 @@ def main(args):
             window_row_and_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
         else:
             print("Mode not supported. <row, col, row_and_col>")
-
+        
+    print(output)
     print("Done!")
 
 

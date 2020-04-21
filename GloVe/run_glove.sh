@@ -6,15 +6,15 @@ set -e
 
 make
 
-CORPUS=../textified.txt
+CORPUS=../textified_csv.txt
 VOCAB_FILE=vocab.txt
-COOCCURRENCE_FILE=cooccurrence.bin
-COOCCURRENCE_SHUF_FILE=cooccurrence.shuf.bin
+COOCCURRENCE_FILE=cooccurrence_csv.bin
+COOCCURRENCE_SHUF_FILE=cooccurrence_csv.shuf.bin
 BUILDDIR=build
-SAVE_FILE=glove_vectors
+SAVE_FILE=glove_vectors_csv
 VERBOSE=2
 MEMORY=4.0
-VOCAB_MIN_COUNT=5
+VOCAB_MIN_COUNT=1
 VECTOR_SIZE=200
 MAX_ITER=50
 WINDOW_SIZE=10
