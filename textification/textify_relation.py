@@ -10,7 +10,7 @@ import numpy as np
 
 from relational_embedder.data_prep import data_prep_utils as dpu
 
-RELATION_STRATEGY = ['row_and_col', 'row', 'col']
+RELATION_STRATEGY = ['row_and_col', 'row', 'col', 'alex']
 INTEGER_STRATEGY = ['skip', 'stringify', 'augment']
 TEXTIFICATION_GRAIN = ['cell', 'token']
 OUTPUT_FORMAT = ['sequence_text', 'windowed_text']
@@ -63,6 +63,7 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 yield cell_value, c
 
 
+
 def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
     try:
         os.remove(output_file)
@@ -77,8 +78,8 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
             current += 1
         df = pd.read_csv(path, encoding='latin1', sep=';')
         # Check if relation is valid. Otherwise skip to next
-        if not dpu.valid_relation(df):
-            continue
+        # if not dpu.valid_relation(df):
+            # continue
         columns = df.columns
         with open(output_file, 'a') as f:
             # Rows
@@ -91,7 +92,50 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
                 values = dpu.encode_cell(cell_value, grain=grain)
                 for cv in values:
                     f.write(" " + cv)
+    f.close()
 
+def alex__read_rows_from_dataframe(df, columns, integer_strategy='skip'):
+    for index, el in df.iterrows():
+        for c in columns:
+            cell_value = el[c]
+            if (cell_value == "\\N"):
+                continue
+            # We check the cell value is valid before continuing
+            if not dpu.valid_cell(cell_value):
+                continue
+            # If strategy is skip, we check that first
+            if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+                if integer_strategy == 'skip':
+                    continue  # no numerical columns
+                elif integer_strategy == 'stringify':
+                    cell_value = str(el[c])
+                elif integer_strategy == 'augment':
+                    cell_value = str(c) + "_<#>_" + str(el[c])  # special symbol to tell apart augmentation from space
+            yield cell_value, c
+
+def alex__serialize_row_col(paths, output_file, integer_strategy=None, grain=None, debug=False):
+    try:
+        os.remove(output_file)
+    except FileNotFoundError:
+        print("Creating new file for writing data")
+
+    total = len(paths)
+    current = 0
+    for path in tqdm(paths):
+        if debug:
+            print(str(current) + "/" + str(total))
+            current += 1
+        df = pd.read_csv(path, encoding='latin1', sep=';')
+
+        columns = df.columns
+        with open(output_file, 'a') as f:
+            # Rows
+            for cell_value in alex__read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    f.write(" " + cv)
+    
+    f.close()
 
 def read_rows_values(path, integer_strategy, grain, dataframe=None):
     """
@@ -375,7 +419,6 @@ def main(args):
     output = args.output
     debug = args.debug
     output_format = args.output_format
-
     fs = all_files_in_path(path)
     if output_format == "sequence_text":
         if relation_strategy == "row":
@@ -384,6 +427,8 @@ def main(args):
             serialize_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
         elif relation_strategy == "row_and_col":
             serialize_row_and_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
+        elif relation_strategy == "alex":
+            alex__serialize_row_col(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
         else:
             print("Mode not supported. <row, col, row_and_col>")
     elif output_format == 'windowed_text':
@@ -406,7 +451,7 @@ if __name__ == "__main__":
     # Argument parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, help='path to collection of relations')
-    parser.add_argument('--relation_strategy', default='row_and_col', type=str, choices=RELATION_STRATEGY,
+    parser.add_argument('--relation_strategy', default='alex', type=str, choices=RELATION_STRATEGY,
                         help='Strategy to capture relationships, row, col, or row_and_col')
     parser.add_argument('--integer_strategy', default='skip', type=str, choices=INTEGER_STRATEGY,
                         help='strategy to determine how to deal with integers')

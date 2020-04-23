@@ -7,7 +7,7 @@ if __name__ == "__main__":
     # Argument parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, help='path to collection of relations')
-    parser.add_argument('--relation_strategy', default='row_and_col', type=str, choices=tr.RELATION_STRATEGY,
+    parser.add_argument('--relation_strategy', default='alex', type=str, choices=tr.RELATION_STRATEGY,
                         help='Strategy to capture relationships, row, col, or row_and_col')
     parser.add_argument('--integer_strategy', default='skip', type=str, choices=tr.INTEGER_STRATEGY,
                         help='strategy to determine how to deal with integers')
