@@ -59,9 +59,7 @@ def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test):
 
     simple_random_forest(X_train_elim, X_test_elim, y_train, y_test)
 
-
-
-def embedding(X_train, X_test, y_train, y_test):
+def embedding_word2vec(X_train, X_test, y_train, y_test):
     # Load models
     model = word2vec.load(word2vec_model_path)
 
@@ -78,22 +76,6 @@ def embedding(X_train, X_test, y_train, y_test):
     return None
 
 
-def quantize(df, excluding = [], hist = "width"):
-    cols = df.columns
-    bin_percentile = 100 / num_bins
-    for col in cols:
-        if col in excluding:
-            continue
-        if df[col].dtype not in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
-            continue 
-        
-        if hist == "width":
-            bins = [np.percentile(df[col], i * bin_percentile) for i in range(num_bins)]
-        else: 
-            bins = [i * (df[col].max() - df[col].min()) / num_bins for i in range(num_bins)]
-        
-        df[col] = np.digitize(df[col], bins)
-    return df
 
 def scatter_plot():
     plt.figure(figsize = (16, 8))
@@ -105,7 +87,7 @@ def scatter_plot():
 if __name__ == "__main__":
     print("Loading & splitting taxi data")
     df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"))
-    df = quantize(df, excluding = ["event_id", "result"])
+    df = EU.quantize(df, excluding = ["event_id", "result"])
     df["result"] = (df["result"] == "nofail")
     df_joined = join_tables(df)
 
@@ -130,4 +112,5 @@ if __name__ == "__main__":
     joined_and_feature_elim_random_forest(X_train_j, X_test_j, y_train_j, y_test_j)
 
     # Embedding: 
+    print("Embedding approaches")
     # embedding(X_train_j, X_test_j, y_train_j, y_test_j)

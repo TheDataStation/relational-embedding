@@ -11,7 +11,7 @@ import numpy as np
 from relational_embedder.data_prep import data_prep_utils as dpu
 
 RELATION_STRATEGY = ['row_and_col', 'row', 'col', 'alex']
-INTEGER_STRATEGY = ['skip', 'stringify', 'augment']
+INTEGER_STRATEGY = ['skip', 'stringify', 'augment', "quantize"]
 TEXTIFICATION_GRAIN = ['cell', 'token']
 OUTPUT_FORMAT = ['sequence_text', 'windowed_text']
 
@@ -23,8 +23,9 @@ def _read_rows_from_dataframe(df, columns, integer_strategy='skip'):
             if (cell_value == "\\N"):
                 continue
             # We check the cell value is valid before continuing
-            if not dpu.valid_cell(cell_value):
-                continue
+            # if not dpu.valid_cell(cell_value):
+            #     print(cell_value)
+            #     continue
             # If strategy is skip, we check that first
             if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
                 if integer_strategy == 'skip':
@@ -45,9 +46,9 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
             data_values = df[c]
             for cell_value in data_values:
                 # We check the cell value is valid before continuing
-                if not dpu.valid_cell(cell_value):
-                    continue
-                elif integer_strategy == 'stringify':
+                # if not dpu.valid_cell(cell_value):
+                #     continue
+                if integer_strategy == 'stringify':
                     cell_value = str(cell_value)
                 elif integer_strategy == 'augment':
                     cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to tell apart augmentation from space
@@ -58,11 +59,27 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 if (cell_value == "\\N"):
                     continue
                 # We check the cell value is valid before continuing
-                if not dpu.valid_cell(cell_value):
-                    continue
+                # if not dpu.valid_cell(cell_value):
+                #     continue
                 yield cell_value, c
 
-
+num_bins = 20
+def quantize(df, excluding = [], hist = "width"):
+    cols = df.columns
+    bin_percentile = 100 / num_bins
+    for col in cols:
+        if col in excluding:
+            continue
+        if df[col].dtype not in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+            continue 
+        
+        if hist == "width":
+            bins = [np.percentile(df[col], i * bin_percentile) for i in range(num_bins)]
+        else: 
+            bins = [i * (df[col].max() - df[col].min()) / num_bins for i in range(num_bins)]
+        
+        df[col] = np.digitize(df[col], bins)
+    return df
 
 def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
     try:
@@ -76,7 +93,8 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=';')
+        df = pd.read_csv(path, encoding='latin1', sep=',')
+        df = quantize(df, excluding = ["event_id", "result"])
         # Check if relation is valid. Otherwise skip to next
         # if not dpu.valid_relation(df):
             # continue
@@ -88,7 +106,7 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
                 for cv in values:
                     f.write(" " + cv)
             # Columns
-            for cell_value in _read_columns_from_dataframe(df, columns):
+            for cell_value in _read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
                 values = dpu.encode_cell(cell_value, grain=grain)
                 for cv in values:
                     f.write(" " + cv)
@@ -125,7 +143,7 @@ def alex__serialize_row_col(paths, output_file, integer_strategy=None, grain=Non
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=';')
+        df = pd.read_csv(path, encoding='latin1', sep=',')
 
         columns = df.columns
         with open(output_file, 'a') as f:
@@ -149,7 +167,7 @@ def read_rows_values(path, integer_strategy, grain, dataframe=None):
     row_values = defaultdict(list)
     df = dataframe
     if df is None:
-        df = pd.read_csv(path, encoding='latin1', sep=';')
+        df = pd.read_csv(path, encoding='latin1', sep=',')
         # Check if relation is valid. Otherwise skip to next
         if not dpu.valid_relation(df):
             return None
@@ -213,7 +231,7 @@ def read_column_values(path, integer_strategy, grain, dataframe=None):
     to_return = defaultdict(list)
     df = dataframe
     if df is None:
-        df = pd.read_csv(path, encoding='latin1', sep=';')
+        df = pd.read_csv(path, encoding='latin1', sep=',')
         # Filtering out non-valid relations
         if not dpu.valid_relation(df):
             return None
@@ -274,7 +292,7 @@ def window_row(paths, output_file, integer_strategy=None, grain=None, debug=Fals
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=';')
+        df = pd.read_csv(path, encoding='latin1', sep=',')
         # Check for valid relations only
         if not dpu.valid_relation(df):
             continue
@@ -316,7 +334,7 @@ def window_column(paths, output_file, integer_strategy=None, grain=None, debug=F
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=';')
+        df = pd.read_csv(path, encoding='latin1', sep=',')
         # Check for valid relations only
         if not dpu.valid_relation(df):
             continue
@@ -357,7 +375,7 @@ def window_row_and_column(paths, output_file, integer_strategy=None, grain=None,
         if debug:
             print(str(current) + "/" + str(total))
             current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=';')
+        df = pd.read_csv(path, encoding='latin1', sep=',')
         # Check for valid relations only
         if not dpu.valid_relation(df):
             continue
