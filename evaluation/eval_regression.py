@@ -6,11 +6,15 @@ import os
 import numpy as np 
 import pandas as pd 
 # import visualizer as VS
-from gensim.models import Word2Vec
+# from gensim.models import Word2Vec
 import word2vec
+from os.path import isfile, join
+from tqdm import tqdm
+from os import listdir
 
 from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.ensemble.forest import RandomForestClassifier
 
 K = 20 
 test_size = 0.2
@@ -30,7 +34,7 @@ def join_tables(df):
         try:
             df_joined = pd.merge(df_joined, df_new, left_on = "d3mIndex", right_on = "id")
         except:
-            print("i can't find matching id column")
+            print("i can't find matching id column %s", f)
     return df_new 
 
 def simple_regression(X_train, X_test, y_train, y_test):
@@ -77,15 +81,16 @@ def quantize(df, hist = "width"):
     cols = df.columns
     bin_percentile = 100 / num_bins
     for col in cols:
-        if df[c].dtype not in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
+        if df[col].dtype not in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
             continue 
         
         if hist == "width":
-            bins = [np.percentile(df[c], bin_percentile * 100) for i in range(num_bins)]
+            print(bin_percentile)
+            bins = [np.percentile(df[col], i * bin_percentile) for i in range(num_bins)]
         else: 
-            bins = [i * (df[c].max() - df[c].min()) / num_bins for i in range(num_bins)]
+            bins = [i * (df[col].max() - df[col].min()) / num_bins for i in range(num_bins)]
         
-        df[c] = np.digitize(df[c], bins)
+        df[col] = np.digitize(df[col], bins)
     return df
 
 def scatter_plot(feature, target):
@@ -119,4 +124,4 @@ if __name__ == "__main__":
     joined_and_lasso(X_train_j, X_test_j, y_train_j, y_test_j)
 
     # Embedding: 
-    embedding(X_train_j, X_test_j, y_train_j, y_test_j)
+    # embedding(X_train_j, X_test_j, y_train_j, y_test_j)
