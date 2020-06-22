@@ -24,14 +24,14 @@ def quantize(df, excluding = [], hist = "width", num_bins = 20):
         df[col] = np.digitize(df[col], bins)
     return df
 
-def vectorize_df(df, model):
+def vectorize_df(df, model, res_col_num):
     length = len(df)
     x_vectorized = [[] for i in range(length)]
     y_vectorized = [[] for i in range(length)]
     for i in range(length):
         row = df[i]
         for j in range(len(row)):
-            if j == 3 or j == 7: 
+            if j == res_col_num - 1 or j == 2 * res_col_num - 1: 
                 y_vectorized[i] += list(model[row[j]])
             else:
                 x_vectorized[i] += list(model[row[j]])
