@@ -39,7 +39,7 @@ if __name__ == "__main__":
     x_vec, y_vec= EU.vectorize_df(df_textified, model)
     Y = df['result'].values.ravel()
 
-    # Train a RF classifier
+    # Train a Random Forest classifier
     X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
     classification_task(X_train, X_test, y_train, y_test)
 

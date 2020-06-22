@@ -38,7 +38,7 @@ def join_tables(df):
         try:
             df_joined = pd.merge(df_joined, df_new, left_on = "event_id", right_on = "event_id")
         except:
-            print("i can't find matching id column in file %s, omit!" % f)
+            print("i can't find matching id column in file %s, skip!" % f)
     return df_joined 
 
 def simple_random_forest(X_train, X_test, y_train, y_test):
@@ -59,24 +59,6 @@ def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test):
 
     simple_random_forest(X_train_elim, X_test_elim, y_train, y_test)
 
-def embedding_word2vec(X_train, X_test, y_train, y_test):
-    # Load models
-    model = word2vec.load(word2vec_model_path)
-
-    # Preparing regression inputs 
-    X_train_emb, y_train_emb = np.empty(X_train.shape[0]), np.empty(X_train.shape[0])
-    # Todo?? token? how to represent a row in the table?
-
-    # Regression
-    lr = LinearRegression()
-    lr.fit(X_train_emb, y_train_emb)
-    train_score=lr.score(X_train_emb, y_train_emb)
-    test_score=lr.score(X_test_emb, y_test_emb)
-    print("LR Train score: %d, Test score: %d", train_score, test_score)
-    return None
-
-
-
 def scatter_plot():
     plt.figure(figsize = (16, 8))
     plt.scatter(df["f4k"], df["f109k"], c=(df["result"] == "nofail"))
@@ -85,7 +67,7 @@ def scatter_plot():
     plt.savefig("plot.png")
 
 if __name__ == "__main__":
-    print("Loading & splitting taxi data")
+    print("Loading & splitting kraken data")
     df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"))
     df = EU.quantize(df, excluding = ["event_id", "result"])
     df["result"] = (df["result"] == "nofail")
@@ -110,7 +92,3 @@ if __name__ == "__main__":
     # # Baseline 3: Join all tables & elim features & random forest
     print("Baseline 3: Joined & Feature Selection & RF")
     joined_and_feature_elim_random_forest(X_train_j, X_test_j, y_train_j, y_test_j)
-
-    # Embedding: 
-    print("Embedding approaches")
-    # embedding(X_train_j, X_test_j, y_train_j, y_test_j)

@@ -60,23 +60,6 @@ def joined_and_lasso(X_train, X_test, y_train, y_test):
         print("LASSO alpha %d Train score: %d, Test score: %d", alpha, train_score, test_score)
         print("LASSO Num of coeff used: %d", coeff_used)
 
-def embedding(X_train, X_test, y_train, y_test):
-    # Load models
-    model = word2vec.load(word2vec_model_path)
-
-    # Preparing regression inputs 
-    X_train_emb, y_train_emb = np.empty(X_train.shape[0]), np.empty(X_train.shape[0])
-    # Todo?? token? how to represent a row in the table?
-
-    # Regression
-    lr = LinearRegression()
-    lr.fit(X_train_emb, y_train_emb)
-    train_score=lr.score(X_train_emb, y_train_emb)
-    test_score=lr.score(X_test_emb, y_test_emb)
-    print("LR Train score: %d, Test score: %d", train_score, test_score)
-    return None
-
-
 def quantize(df, hist = "width"):
     cols = df.columns
     bin_percentile = 100 / num_bins
@@ -122,6 +105,3 @@ if __name__ == "__main__":
 
     # Baseline 3: Join all tables & LASSO
     joined_and_lasso(X_train_j, X_test_j, y_train_j, y_test_j)
-
-    # Embedding: 
-    # embedding(X_train_j, X_test_j, y_train_j, y_test_j)

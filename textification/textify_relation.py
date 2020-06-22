@@ -91,8 +91,11 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
     current = 0
     for path in tqdm(paths):
         if debug:
-            print(str(current) + "/" + str(total))
+            print(str(current) + "/" + str(total) + ":" + path)
             current += 1
+        
+        if "schema" in path or "json" in path: 
+            continue 
         df = pd.read_csv(path, encoding='latin1', sep=',')
         df = quantize(df, excluding = ["event_id", "result"])
         # Check if relation is valid. Otherwise skip to next
@@ -469,7 +472,7 @@ if __name__ == "__main__":
     # Argument parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, help='path to collection of relations')
-    parser.add_argument('--relation_strategy', default='alex', type=str, choices=RELATION_STRATEGY,
+    parser.add_argument('--relation_strategy', default='row_and_col', type=str, choices=RELATION_STRATEGY,
                         help='Strategy to capture relationships, row, col, or row_and_col')
     parser.add_argument('--integer_strategy', default='skip', type=str, choices=INTEGER_STRATEGY,
                         help='strategy to determine how to deal with integers')
