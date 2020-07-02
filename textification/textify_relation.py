@@ -63,7 +63,7 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 #     continue
                 yield cell_value, c
 
-num_bins = 20
+num_bins = 50
 def quantize(df, excluding = [], hist = "width"):
     cols = df.columns
     bin_percentile = 100 / num_bins
@@ -122,8 +122,8 @@ def alex__read_rows_from_dataframe(df, columns, integer_strategy='skip'):
             if (cell_value == "\\N"):
                 continue
             # We check the cell value is valid before continuing
-            if not dpu.valid_cell(cell_value):
-                continue
+            # if not dpu.valid_cell(cell_value):
+            #     continue
             # If strategy is skip, we check that first
             if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
                 if integer_strategy == 'skip':
@@ -132,7 +132,7 @@ def alex__read_rows_from_dataframe(df, columns, integer_strategy='skip'):
                     cell_value = str(el[c])
                 elif integer_strategy == 'augment':
                     cell_value = str(c) + "_<#>_" + str(el[c])  # special symbol to tell apart augmentation from space
-            yield cell_value, c
+            yield cell_value, c, index
 
 def alex__serialize_row_col(paths, output_file, integer_strategy=None, grain=None, debug=False):
     try:
@@ -147,12 +147,13 @@ def alex__serialize_row_col(paths, output_file, integer_strategy=None, grain=Non
             print(str(current) + "/" + str(total))
             current += 1
         df = pd.read_csv(path, encoding='latin1', sep=',')
+        df = quantize(df, excluding = ["event_id", "result"])
 
         columns = df.columns
         with open(output_file, 'a') as f:
             # Rows
-            for cell_value in alex__read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
-                values = dpu.encode_cell(cell_value, grain=grain)
+            for cell_value, c, index in alex__read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+                values = dpu.encode_cell((cell_value, c), grain=grain)
                 for cv in values:
                     f.write(" " + cv)
     
@@ -198,29 +199,33 @@ def serialize_row(paths, output_file, integer_strategy=None, grain=None, debug=F
             print(str(current) + "/" + str(total))
             current += 1
 
-        map_rowidx_values = read_rows_values(path, integer_strategy, grain)
-        values = []
-        # unpack map into list of values
-        for index, values in map_rowidx_values.items():
-            values.extend(values)
-        with open(output_file, 'a') as f:
-            # for rowv in values:
-            data_string = " ".join(values)
-            f.write(data_string)
+        # map_rowidx_values = read_rows_values(path, integer_strategy, grain)
+        # values = []
+        # # unpack map into list of values
+        # for index, values in map_rowidx_values.items():
+        #     values.extend(values)
+        # with open(output_file, 'a') as f:
+        #     # for rowv in values:
+        #     data_string = " ".join(values)
+        #     f.write(data_string)
 
-        # df = pd.read_csv(path, encoding='latin1', sep='\t')
-        # # Check if relation is valid. Otherwise skip to next
+        if "schema" in path or "json" in path:
+            continue
+
+        df = pd.read_csv(path, encoding='latin1', sep=',')
+        df = quantize(df, excluding = ["event_id", "result"])
+        # Check if relation is valid. Otherwise skip to next
         # if not dpu.valid_relation(df):
         #     continue
-        # columns = df.columns
-        #
-        # with open(output_file, 'a') as f:
-        #     # Rows
-        #     for cell_value in _read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
-        #         # If valid, we clean and format it and return it
-        #         values = dpu.encode_cell(cell_value, grain=grain)
-        #         for cv in values:
-        #             f.write(" " + cv)
+        columns = df.columns
+        
+        with open(output_file, 'a') as f:
+            # Rows
+            for cell_value in _read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+                # If valid, we clean and format it and return it
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    f.write(" " + cv)
 
 
 def read_column_values(path, integer_strategy, grain, dataframe=None):
@@ -261,26 +266,31 @@ def serialize_column(paths, output_file, integer_strategy=None, grain=None, debu
             print(str(current) + "/" + str(total))
             current += 1
 
-        map_column_values = read_column_values(path, integer_strategy, grain)
-        # we need a list of values only, so we unpack the dictionary
-        values = []
-        for k, v in map_column_values.items():
-            values.extend(v)
-        with open(output_file, 'a') as f:
-            data_string = " ".join(map_column_values)
-            f.write(data_string)
+        # map_column_values = read_column_values(path, integer_strategy, grain)
+        # # we need a list of values only, so we unpack the dictionary
+        # values = []
+        # for k, v in map_column_values.items():
+        #     values.extend(v)
+        # with open(output_file, 'a') as f:
+        #     data_string = " ".join(map_column_values)
+        #     f.write(data_string)
 
-        # df = pd.read_csv(path, encoding='latin1', sep='\t')
-        # # Filtering out non-valid relations
+        if "schema" in path or "json" in path:
+            continue
+
+        df = pd.read_csv(path, encoding='latin1', sep=',')
+        df = quantize(df, excluding = ["event_id", "result"])
+
+        # Filtering out non-valid relations
         # if not dpu.valid_relation(df):
         #     continue
-        # columns = df.columns
-        # with open(output_file, 'a') as f:
-        #     # Columns
-        #     for cell_value in _read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
-        #         values = dpu.encode_cell(cell_value, grain=grain)
-        #         for cv in values:
-        #             f.write(" " + cv)
+        columns = df.columns
+        with open(output_file, 'a') as f:
+            # Columns
+            for cell_value in _read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
+                values = dpu.encode_cell(cell_value, grain=grain)
+                for cv in values:
+                    f.write(" " + cv)
 
 
 def window_row(paths, output_file, integer_strategy=None, grain=None, debug=False):

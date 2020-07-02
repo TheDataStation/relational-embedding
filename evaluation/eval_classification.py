@@ -20,7 +20,7 @@ from sklearn.metrics import accuracy_score
 
 K = 20 
 test_size = 0.2
-num_bins = 20
+num_bins = 50
 kraken_path = "../data/kraken/"
 school_path = "../data/school/"
 
@@ -87,18 +87,47 @@ def scatter_plot():
     plt.savefig("plot.png")
 
 if __name__ == "__main__":
-    # print("Loading & splitting kraken data")
-    # df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"))
-    # df = EU.quantize(df, excluding = ["event_id", "result"])
-    # df["result"] = (df["result"] == "nofail")
-    # df_joined = join_tables_kraken(df)
+    print("Loading & splitting kraken data")
+    df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"))
+    df = EU.quantize(df, excluding = ["event_id", "result"])
+    df["result"] = (df["result"] == "nofail")
+    df_joined = join_tables_kraken(df)
 
-    # X = df.drop(['result'], axis = 1)
-    # Y = df['result'].values.ravel()
+    X = df.drop(['result'], axis = 1)
+    Y = df['result'].values.ravel()
+    X_train, X_test, y_train, y_test = train_test_split(X,Y, test_size = test_size, random_state=10)
+    
+    X_joined = df_joined.drop(["result"], axis = 1)
+    Y_joined = df_joined["result"].values.ravel()
+    X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(X_joined, Y_joined, test_size = test_size, random_state=10)
+    
+    # Baseline 1: simple random forest 
+    print("Baseline 1: Simple RF")
+    simple_random_forest(X_train, X_test, y_train, y_test)
+
+    # Baseline 2: Join all tables & random forest
+    print("Baseline 2: Joined & RF")
+    simple_random_forest(X_train_j, X_test_j, y_train_j, y_test_j) 
+
+    # Baseline 3: Join all tables & elim features & random forest
+    print("Baseline 3: Joined & Feature Selection & RF")
+    joined_and_feature_elim_random_forest(X_train_j, X_test_j, y_train_j, y_test_j)
+
+    # print("Loading & splitting school data")
+    # df = pd.read_csv(os.path.join(school_path, "base.csv"))
+    # print(df.shape)
+    # df = EU.quantize(df, excluding = ["class"])
+    # df["class"] = (df["class"] == True)
+    # print(df.shape)
+    # df_joined = join_tables_school(df)
+
+    # print(df_joined.shape)
+    # X = df.drop(['class'], axis = 1)
+    # Y = df['class'].values.ravel()
     # X_train, X_test, y_train, y_test = train_test_split(X,Y, test_size = test_size, random_state=10)
     
-    # X_joined = df_joined.drop(["result"], axis = 1)
-    # Y_joined = df_joined["result"].values.ravel()
+    # X_joined = df_joined.drop(["class"], axis = 1)
+    # Y_joined = df_joined["class"].values.ravel()
     # X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(X_joined, Y_joined, test_size = test_size, random_state=10)
     
     # # Baseline 1: simple random forest 
@@ -112,33 +141,3 @@ if __name__ == "__main__":
     # # # Baseline 3: Join all tables & elim features & random forest
     # print("Baseline 3: Joined & Feature Selection & RF")
     # joined_and_feature_elim_random_forest(X_train_j, X_test_j, y_train_j, y_test_j)
-
-
-    print("Loading & splitting school data")
-    df = pd.read_csv(os.path.join(school_path, "base.csv"))
-    print(df.shape)
-    df = EU.quantize(df, excluding = ["class"])
-    df["class"] = (df["class"] == True)
-    print(df.shape)
-    df_joined = join_tables_school(df)
-
-    print(df_joined.shape)
-    X = df.drop(['class'], axis = 1)
-    Y = df['class'].values.ravel()
-    X_train, X_test, y_train, y_test = train_test_split(X,Y, test_size = test_size, random_state=10)
-    
-    X_joined = df_joined.drop(["class"], axis = 1)
-    Y_joined = df_joined["class"].values.ravel()
-    X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(X_joined, Y_joined, test_size = test_size, random_state=10)
-    
-    # Baseline 1: simple random forest 
-    print("Baseline 1: Simple RF")
-    simple_random_forest(X_train, X_test, y_train, y_test)
-
-    # # Baseline 2: Join all tables & random forest
-    print("Baseline 2: Joined & RF")
-    simple_random_forest(X_train_j, X_test_j, y_train_j, y_test_j) 
-
-    # # Baseline 3: Join all tables & elim features & random forest
-    print("Baseline 3: Joined & Feature Selection & RF")
-    joined_and_feature_elim_random_forest(X_train_j, X_test_j, y_train_j, y_test_j)
