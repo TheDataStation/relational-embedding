@@ -27,8 +27,8 @@ def parse_args():
 	parser.add_argument('--output', nargs='?', default='emb/karate.emb',
 	                    help='Embeddings path')
 
-	parser.add_argument('--dimensions', type=int, default=128,
-	                    help='Number of dimensions. Default is 128.')
+	parser.add_argument('--dimensions', type=int, default=150,
+	                    help='Number of dimensions. Default is 150.')
 
 	parser.add_argument('--walk-length', type=int, default=80,
 	                    help='Length of walk per source. Default is 80.')
@@ -68,9 +68,9 @@ def read_graph():
 	Reads the input network in networkx.
 	'''
 	if args.weighted:
-		G = nx.read_edgelist(args.input, nodetype=int, data=(('weight',float),), create_using=nx.DiGraph())
+		G = nx.read_edgelist(args.input, nodetype=str, data=(('weight',float),), create_using=nx.DiGraph())
 	else:
-		G = nx.read_edgelist(args.input, nodetype=int, create_using=nx.DiGraph())
+		G = nx.read_edgelist(args.input, nodetype=str, create_using=nx.DiGraph())
 		for edge in G.edges():
 			G[edge[0]][edge[1]]['weight'] = 1
 
@@ -83,7 +83,8 @@ def learn_embeddings(walks):
 	'''
 	Learn embeddings by optimizing the Skipgram objective using SGD.
 	'''
-	walks = [map(str, walk) for walk in walks]
+	print(walks[0])
+	print(len(walks), len(walks[0]))
 	model = Word2Vec(walks, size=args.dimensions, window=args.window_size, min_count=0, sg=1, workers=args.workers, iter=args.iter)
 	model.save_word2vec_format(args.output)
 	
@@ -96,7 +97,9 @@ def main(args):
 	nx_G = read_graph()
 	G = node2vec.Graph(nx_G, args.directed, args.p, args.q)
 	G.preprocess_transition_probs()
+	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
+	print("Walking Done!")
 	learn_embeddings(walks)
 
 if __name__ == "__main__":

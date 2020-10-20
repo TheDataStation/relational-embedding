@@ -55,6 +55,8 @@ data/*
 .DS_Store
 
 # Node2Vec 
+*.edgelist
+*.emb
 .gradle
 *.iml
 *.ipr

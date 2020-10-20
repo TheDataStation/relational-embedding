@@ -11,6 +11,7 @@ import sys
 
 sys.path.append('..')
 from relational_embedder.data_prep import data_prep_utils as dpu
+import textification.textify_relation as tr 
 
 graph = nx.Graph()
 INT_TYPE = [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]
@@ -18,42 +19,6 @@ INT_TYPE = [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float
 def all_files_in_path(path):
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
     return fs
-
-# Assume that textification strategy is skip (integer), row & col, sequence text
-def textify_df_row(df, integer_strategy = 'skip'):
-    columns = df.columns
-    rows = [] 
-    for index, el in df.iterrows():
-        curr_row = []
-        for c in columns:
-            cell_value = el[c]
-            if (cell_value == "\\N"):
-                continue
-            if not dpu.valid_cell(cell_value):
-                continue
-            if df[c].dtype in INT_TYPE:
-                if integer_strategy == 'skip':
-                    continue 
-            curr_row.append(dpu.encode_cell((cell_value, index), grain='cell'))
-        rows.append(curr_row)
-    return rows
-
-def textify_df_col(df, integer_strategy = 'skip'):
-    columns = df.columns
-    cols = [] 
-    for c in columns:
-        curr_col = []
-        for cell_value in df[c]:
-            if (cell_value == "\\N"):
-                continue
-            if not dpu.valid_cell(cell_value):
-                continue
-            if df[c].dtype in INT_TYPE:
-                if integer_strategy == 'skip':
-                    continue 
-            curr_col.append(dpu.encode_cell((cell_value, c), grain='cell'))
-        cols.append(curr_col)
-    return cols
 
 def generate_graph(args):
     path = args.dataset
@@ -63,24 +28,31 @@ def generate_graph(args):
     total = len(fs)
     current = 0 
     for path in tqdm(fs):
-        df = pd.read_csv(path, encoding = 'latin1', sep='\t')
-        if not dpu.valid_relation(df): 
-            continue 
+        df = pd.read_csv(path, encoding = 'latin1', sep=',')
+        df = tr.quantize(df, excluding = ["eventid", "result"])
+
         columns = df.columns 
-        textified_rows = textify_df_row(df)
-        for row in textified_rows:
-            for col in range(len(row) - 1):
-                for entry_x in row[col]:
-                    for entry_y in row[col+1]:
-                        graph.add_edge(entry_x, entry_y, weight = 3)
-        
-        textified_cols = textify_df_col(df)
-        for col in textified_cols:
-            for row in range(len(col) - 1):
-                for entry_x in col[row]:
-                    for entry_y in col[row+1]:
-                        graph.add_edge(entry_x, entry_y, weight = 1)
-                    
+
+        for cell_value, row in tr._read_rows_from_dataframe(df, columns, integer_strategy="stringify"):
+            decoded_row = dpu.encode_cell(row, grain="cell")
+            decoded_value = dpu.encode_cell(cell_value, grain="cell")
+            for value in decoded_value:
+                for row in decoded_row:
+                    if (value, "row:" + row) in graph.edges():
+                        graph[value]["row:" + row]['weight'] += 1 
+                    else:
+                        graph.add_edge(value, "row:" + row, weight = 1)
+    
+        for cell_value, col in tr._read_columns_from_dataframe(df, columns, integer_strategy="stringify"):
+            decoded_col = dpu.encode_cell(col, grain="cell")
+            decoded_value = dpu.encode_cell(cell_value, grain="cell")
+            for value in decoded_value:
+                for col in decoded_col:
+                    if (value, "col:" + col) in graph.edges():
+                        graph[value]["col:" + col]['weight'] += 1 
+                    else:
+                        graph.add_edge(value, "col:" + col, weight = 1)         
+
     nx.write_edgelist(graph, args.output)
 
 if __name__ == "__main__":
@@ -98,7 +70,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
     # Generate and Save graph 
     generate_graph(args)
     print("Done! saved under ./graph")
