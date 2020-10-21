@@ -24,17 +24,23 @@ def quantize(df, excluding = [], hist = "width", num_bins = 50):
         df[col] = np.digitize(df[col], bins)
     return df
 
-def vectorize_df(df, model, res_col_num):
+def vectorize_df(df, model, res_col_num, model_type = "word2vec"):
     length = len(df)
     x_vectorized = [[] for i in range(length)]
     y_vectorized = [[] for i in range(length)]
-    for i in range(length):
-        row = df[i]
-        for j in range(len(row)):
-            if j == res_col_num - 1 or j == 2 * res_col_num - 1: 
-                y_vectorized[i] += list(model[row[j]])
-            else:
-                x_vectorized[i] += list(model[row[j]])
+    if model_type == "word2vec":
+        for i in range(length):
+            row = df[i]
+            for j in range(len(row)):
+                if j == res_col_num - 1 or j == 2 * res_col_num - 1: 
+                    y_vectorized[i] += list(model[row[j]])
+                else:
+                    x_vectorized[i] += list(model[row[j]])
+    
+    if model_type == "node2vec":
+        for i in range(length):
+            x_vectorized[i] += list(model["row:" + str(i)])
+            y_vectorized[i] = df[i][res_col_num - 1] 
     return x_vectorized, y_vectorized
 
 # Assume that textification strategy is skip (integer), row & col, sequence text
@@ -72,18 +78,6 @@ def textify_df(df, ts = "row_and_col"):
                     offset = 0
                     cnt += 1
     return input
-                
-    # columns = df.columns
-    # query_after_textification = [] 
-    # for index, el in df.iterrows():
-    #     query_row = []
-    #     for c in columns:
-    #         cell_value = el[c]
-    #         if (cell_value == "\\N"):
-    #             continue
-    #         query_row.append(dpu.encode_cell((cell_value, c), grain='cell'))
-    #     query_after_textification.append(query_row)
-    # return query_after_textification
 
 def obtain_ground_truth_name(sample_size = 1000):
     df = pd.read_csv(name_basics_file, encoding = 'latin1', sep = '\t')
@@ -108,9 +102,36 @@ def measure_quality(ground_truth, predicted_truth):
         precision.append(flag)
     return precision
 
-if __name__ == "__main__":
-    print("Evaluation Utils:")
+def remove_hubness_and_run(X, Y):
+    from skhubness import Hubness
+    from sklearn.model_selection import cross_val_score
+    from skhubness.neighbors import KNeighborsClassifier
 
-    # test 1 : obtain grouth truth for missing names 
-    print("Obtain ground truth for missing names")
-    print(obtain_ground_truth_name(100))
+    # Measure Hubness before and after removal (method mutual proximity)
+    hub = Hubness(k=10, metric='cosine')
+    hub.fit(X)
+    k_skew = hub.score()
+    print(f'Skewness = {k_skew:.3f}')
+    
+    hub_mp = Hubness(k=10, metric='cosine',
+                 hubness='mutual_proximity')
+    hub_mp.fit(X)
+    k_skew_mp = hub_mp.score()
+    print(f'Skewness after MP: {k_skew_mp:.3f} '
+        f'(reduction of {k_skew - k_skew_mp:.3f})')
+    print(f'Robin hood: {hub_mp.robinhood_index:.3f} '
+        f'(reduction of {hub.robinhood_index - hub_mp.robinhood_index:.3f})')
+
+    # Measure Classfication Accuracy before and after removal 
+    # vanilla kNN
+    knn_standard = KNeighborsClassifier(n_neighbors=5, metric='cosine')
+    acc_standard = cross_val_score(knn_standard, X, y, cv=5)
+
+    # kNN with hubness reduction (mutual proximity)
+    knn_mp = KNeighborsClassifier(n_neighbors=5,
+                              metric='cosine',
+                              hubness='mutual_proximity')
+    acc_mp = cross_val_score(knn_mp, X, y, cv=5)
+
+    print(f'Accuracy (vanilla kNN): {acc_standard.mean():.3f}')
+    print(f'Accuracy (kNN with hubness reduction): {acc_mp.mean():.3f}')

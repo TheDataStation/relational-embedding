@@ -60,7 +60,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', 
         type=str, 
-        default='../data/1/', # This is my small dataset
+        default='./sample/', # This is my small dataset
         help='path to collection of relations'
     )
 

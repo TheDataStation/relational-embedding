@@ -57,13 +57,13 @@ def regression_task():
  
 def kraken_task():
     # Load model 
-    model = word2vec.load(word2vec_model_path_kraken)
+    model = KeyedVectors.load_word2vec_format((word2vec_model_path_kraken)
 
     # Obtain textified & quantized data
     df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"))
     df_textified = EU.textify_df(df, "alex")
     print(df_textified[0])
-    x_vec, y_vec = EU.vectorize_df(df_textified, model, 4)
+    x_vec, y_vec = EU.vectorize_df(df_textified, model, 4, model = "word2vec")
     df["result"] = (df["result"] == "nofail")
     Y = df['result'].values.ravel()
 
@@ -84,7 +84,7 @@ def school_task():
     # Obtain textified & quantized data
     df = pd.read_csv("../data/school/base.csv")
     df_textified = EU.textify_df(df, "row_and_col")
-    x_vec, y_vec = EU.vectorize_df(df_textified, model, 7)
+    x_vec, y_vec = EU.vectorize_df(df_textified, model, 7, model = "word2vec")
     Y = df['class'].values.ravel()
 
     # Train a Random Forest classifier
@@ -101,24 +101,3 @@ if __name__ == "__main__":
 
     # print("School dataset")
     # school_task()
-
-
-    # # Get top K words and metrics from word2vec model 
-    # results = []
-    # results_dist = []
-    # for i in len(sample_query):
-    #     topk_words, topk_metrics = word2vec.predict_output_word(query[i], topn=K)
-    #     dist = [] 
-    #     for word in query[i]:
-    #         dist.append(word2vec.wv.similarity(word, ground_truth[i]))
-        
-    #     results.append(topk_words)
-    #     results_dist.append(dist)
-
-    # # measure quality 
-    # precision = EU.measure_quality(ground_truth, results)
-
-    # # Plot Similarity 
-    # VS.display_pca_scatterplot(model, sample_query[0], 300, output = "word2vec_eval.png", vocab_list = model.vocab)
-
-    
