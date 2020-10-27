@@ -50,16 +50,16 @@ def textify_df(df, ts = "row_and_col"):
     input = [[] for i in range(df.shape[0])]
     # Rows
     if ts == "row_and_col" or ts == "row":
-        for cell_value, index in tr._read_rows_from_dataframe(df, columns, integer_strategy="stringify"):
+        for cell_value in tr._read_rows_from_dataframe(df, columns, integer_strategy="quantize"):
             values = dpu.encode_cell(cell_value, grain="cell")
             for cv in values:
                 # f.write(" " + cv)
-                input[cell_value[index]].append(cv)
+                input[cell_value[1]].append(cv)
 
     # Columns
     if ts == "row_and_col" or ts == "col":
         cnt = 0 
-        for cell_value in tr._read_columns_from_dataframe(df, columns, integer_strategy="stringify"):
+        for cell_value in tr._read_columns_from_dataframe(df, columns, integer_strategy="quantize"):
             values = dpu.encode_cell(cell_value, grain="cell")
             for cv in values:
                 # f.write(" " + cv)
@@ -69,7 +69,7 @@ def textify_df(df, ts = "row_and_col"):
     if ts == "alex": 
         cnt = 0
         offset = 0
-        for cell_value, c, index in tr.alex__read_rows_from_dataframe(df, columns, integer_strategy="stringify"):
+        for cell_value, c, index in tr.alex__read_rows_from_dataframe(df, columns, integer_strategy="quantize"):
             values = dpu.encode_cell((cell_value, c), grain="cell")
             for cv in values:
                 input[cnt].append(cv)

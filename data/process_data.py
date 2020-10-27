@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import argparse
 import json
-# This file preprocess the datasets and remove target column from the dataset
 
+# This file preprocess the datasets and remove target column from the dataset
 def task_loader(args):
     with open(args.data_config, 'r') as json_file:
         configs = json.load(json_file)
@@ -20,7 +20,7 @@ def task_loader(args):
 
         df = pd.read_csv(location + target_file)
         df = df.drop(columns=[target_column])
-        df.to_csv(location_processed)
+        df.to_csv(location_processed, index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser() 

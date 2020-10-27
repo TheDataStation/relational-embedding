@@ -438,7 +438,7 @@ def window_row_and_column(paths, output_file, integer_strategy=None, grain=None,
 
 
 def all_files_in_path(path):
-    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
+    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv"]
     return fs
 
 
@@ -484,7 +484,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, help='path to collection of relations')
     parser.add_argument('--relation_strategy', default='row_and_col', type=str, choices=RELATION_STRATEGY,
                         help='Strategy to capture relationships, row, col, or row_and_col')
-    parser.add_argument('--integer_strategy', default='skip', type=str, choices=INTEGER_STRATEGY,
+    parser.add_argument('--integer_strategy', default='stringify', type=str, choices=INTEGER_STRATEGY,
                         help='strategy to determine how to deal with integers')
     parser.add_argument('--grain', default='cell', type=str, choices=TEXTIFICATION_GRAIN,
                         help='choose whether to process individual tokens (token), or entire cells (cell)')

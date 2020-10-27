@@ -17,9 +17,9 @@ from sklearn.metrics import accuracy_score
 import tensorflow as tf
 
 K = 20 
-node2vec_model_path_kraken = "../node2vec/emd/kraken.emd"
+node2vec_model_path_kraken = "../node2vec/emb/kraken.emb"
 kraken_path = "../data/kraken/"
-node2vec_model_path_school = "../node2vec/emd/school.emd"
+node2vec_model_path_school = "../node2vec/emb/school.emb"
 test_size = 0.2
 num_bins = 50
 

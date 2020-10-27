@@ -1,4 +1,4 @@
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, KeyedVectors
 import sys
 sys.path.append('..')
 
@@ -17,7 +17,8 @@ from sklearn.metrics import accuracy_score
 import tensorflow as tf
 
 K = 20 
-word2vec_model_path_kraken = "../word2vec/kraken_alex.bin"
+
+word2vec_model_path_kraken = "../word2vec/emb/kraken_textified_row_and_col_quantize.emb"
 kraken_path = "../data/kraken/"
 word2vec_model_path_school = "../word2vec/school.bin"
 test_size = 0.2
@@ -57,15 +58,16 @@ def regression_task():
  
 def kraken_task():
     # Load model 
-    model = KeyedVectors.load_word2vec_format((word2vec_model_path_kraken)
+    model = KeyedVectors.load_word2vec_format((word2vec_model_path_kraken))
 
     # Obtain textified & quantized data
-    df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"))
-    df_textified = EU.textify_df(df, "alex")
-    print(df_textified[0])
-    x_vec, y_vec = EU.vectorize_df(df_textified, model, 4, model = "word2vec")
-    df["result"] = (df["result"] == "nofail")
-    Y = df['result'].values.ravel()
+    df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"), sep=',', encoding='latin')
+    df_textified = EU.textify_df(df, "row_and_col")
+    x_vec, y_vec = EU.vectorize_df(df_textified, model, 4, model_type = "word2vec")
+    
+    df2 = pd.read_csv(os.path.join(kraken_path, "base_processed.csv"), sep=',', encoding='latin')
+    df2["result"] = (df2["result"] == "nofail")
+    Y = df2['result'].values.ravel()
 
     # Train a Random Forest classifier
     X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)

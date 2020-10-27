@@ -1,26 +1,34 @@
 {
     "kraken": {
         "location": "./data/kraken/",
-        "target_file": "kraken.csv",
+        "target_file": "base_processed.csv",
         "target_column": "result",
         "name": "kraken",
         "task_type": "classification",
-        "location_processed": "./data/kraken/base_processed.csv"
+        "location_processed": "./data/kraken/kraken.csv"
     },
     "financial": {
         "location": "./data/financial/",
-        "target_file": "loan.csv",
+        "target_file": "base_processed.csv",
         "target_column": "status",
         "name": "financial",
         "task_type": "classification",
-        "location_processed": "./data/financial/base_processed.csv"
+        "location_processed": "./data/financial/loan.csv"
     },
     "taxi": {
         "location": "./data/taxi/",
-        "target_file": "base_data.csv",
+        "target_file": "base_processed.csv",
         "target_column": "collisions",
         "name": "taxi",
         "task_type": "regression",
-        "location_processed": "./data/taxi/base_processed.csv"
+        "location_processed": "./data/taxi/base_data.csv"
+    },
+    "sample": {
+        "location": "./data/sample/",
+        "target_file": "base_processed.csv",
+        "target_column": "res",
+        "name": "sample",
+        "task_type": "regression",
+        "location_processed": "./data/sample/base.csv"
     }
 }

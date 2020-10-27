@@ -17,7 +17,7 @@ graph = nx.Graph()
 INT_TYPE = [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]
 
 def all_files_in_path(path):
-    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
+    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv"]
     return fs
 
 def generate_graph(args):
