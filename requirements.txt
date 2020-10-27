@@ -4,4 +4,3 @@ gensim==0.13.3
 tqdm==4.47.0
 sentencepiece==0.1.85
 pandas==0.24.02
-python>=3.7

@@ -1,0 +1,26 @@
+{
+    "kraken": {
+        "location": "./data/kraken/",
+        "target_file": "kraken.csv",
+        "target_column": "result",
+        "name": "kraken",
+        "task_type": "classification",
+        "location_processed": "./data/kraken/base_processed.csv"
+    },
+    "financial": {
+        "location": "./data/financial/",
+        "target_file": "loan.csv",
+        "target_column": "status",
+        "name": "financial",
+        "task_type": "classification",
+        "location_processed": "./data/financial/base_processed.csv"
+    },
+    "taxi": {
+        "location": "./data/taxi/",
+        "target_file": "base_data.csv",
+        "target_column": "collisions",
+        "name": "taxi",
+        "task_type": "regression",
+        "location_processed": "./data/taxi/base_processed.csv"
+    }
+}
