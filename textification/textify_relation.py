@@ -63,7 +63,7 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 #     continue
                 yield cell_value, c
 
-num_bins = 50
+num_bins = 10
 def quantize(df, excluding = [], hist = "width"):
     cols = df.columns
     bin_percentile = 100 / num_bins

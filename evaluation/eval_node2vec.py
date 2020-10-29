@@ -21,7 +21,7 @@ node2vec_model_path_kraken = "../node2vec/emb/kraken.emb"
 kraken_path = "../data/kraken/"
 node2vec_model_path_school = "../node2vec/emb/school.emb"
 test_size = 0.2
-num_bins = 50
+num_bins = 10
 
 def classification_task(X_train, X_test, y_train, y_test):
     rf = RandomForestClassifier(n_estimators = 1000)
@@ -62,14 +62,17 @@ def kraken_task():
     df_textified = EU.textify_df(df, "alex")
     print(df_textified[0])
     x_vec, y_vec = EU.vectorize_df(df_textified, model, 4, model_type = "node2vec")
-    df["result"] = (df["result"] == "nofail")
-    Y = df['result'].values.ravel()
+    df2 = pd.read_csv(os.path.join(kraken_path, "base_processed.csv"), sep=',', encoding='latin')
+    df2["result"] = (df2["result"] == "nofail")
+    Y = df2['result'].values.ravel()
+
+    EU.remove_hubness_and_run(x_vec, Y)
 
     # Train a Random Forest classifier
     X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
 
     classification_task(X_train, X_test, y_train, y_test)
-    classification_task_nn(X_train, X_test, y_train, y_test)
+    # classification_task_nn(X_train, X_test, y_train, y_test)
 
 
 def school_task():

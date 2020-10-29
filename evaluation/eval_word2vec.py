@@ -8,6 +8,9 @@ import eval_utils as EU
 import visualizer as VS
 import word2vec
 import os
+import argparse
+import json 
+
 from keras.models import Sequential
 from keras import layers
 
@@ -18,11 +21,13 @@ import tensorflow as tf
 
 K = 20 
 
+word2vec_embedding_storage = '../word2vec/emb/'
+
 word2vec_model_path_kraken = "../word2vec/emb/kraken_textified_row_and_col_quantize.emb"
 kraken_path = "../data/kraken/"
 word2vec_model_path_school = "../word2vec/school.bin"
 test_size = 0.2
-num_bins = 50
+num_bins = 20
 
 def classification_task(X_train, X_test, y_train, y_test):
     rf = RandomForestClassifier(n_estimators = 1000)
@@ -55,51 +60,54 @@ def classification_task_nn(X_train, X_test, y_train, y_test):
 
 def regression_task(): 
     return None
- 
-def kraken_task():
-    # Load model 
-    model = KeyedVectors.load_word2vec_format((word2vec_model_path_kraken))
 
-    # Obtain textified & quantized data
-    df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"), sep=',', encoding='latin')
-    df_textified = EU.textify_df(df, "row_and_col")
-    x_vec, y_vec = EU.vectorize_df(df_textified, model, 4, model_type = "word2vec")
-    
-    df2 = pd.read_csv(os.path.join(kraken_path, "base_processed.csv"), sep=',', encoding='latin')
-    df2["result"] = (df2["result"] == "nofail")
-    Y = df2['result'].values.ravel()
+def evaluate_task(args):
+    # Load task config information 
+    with open("../data/data_config.txt", "r") as jsonfile:
+        data_config = json.load(jsonfile)
+    config = data_config[args.task]
+    location = config["location"]
+    target_file = config["target_file"]
+    location_processed = config["location_processed"]
+    target_column = config["target_column"]
 
-    # Train a Random Forest classifier
-    X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
-    
-    print(len(X_train), len(X_train[0]))
+    # Load data 
+    trimmed_table = pd.read_csv(os.path.join("../", location_processed), sep=',', encoding='latin')
+    full_table = pd.read_csv(os.path.join("../", location + target_file), sep=',', encoding='latin')
+    Y = full_table[target_column]
 
-    classification_task(X_train, X_test, y_train, y_test)
-    classification_task_nn(X_train, X_test, y_train, y_test)
+    # Set embeddings that are to be evaluated 
+    all_embeddings_path = [] 
+    if args.embedding is not None:
+        all_embeddings_path = [args.embedding]
+    else: 
+        all_embeddings_path = EU.all_files_in_path(word2vec_embedding_storage, args.task)
 
+    # Run through the embedding list and do evaluation 
+    for path in all_embeddings_path:
+        model = KeyedVectors.load_word2vec_format(path)
+        textification_strategy, integer_strategy = EU.parse_strategy(path)
 
-def school_task():
-    # Load model 
-    print("Obtain model")
-    model = word2vec.load(word2vec_model_path_school)
+        # Obtain textified & quantized data
+        df_textified = EU.textify_df(trimmed_table, textification_strategy, integer_strategy)
+        x_vec = pd.DataFrame(EU.vectorize_df(df_textified, model, model_type = "word2vec"))
+        x_vec = x_vec.dropna(axis=1)
 
-    # Obtain textified & quantized data
-    df = pd.read_csv("../data/school/base.csv")
-    df_textified = EU.textify_df(df, "row_and_col")
-    x_vec, y_vec = EU.vectorize_df(df_textified, model, 7, model = "word2vec")
-    Y = df['class'].values.ravel()
+        # Train a Random Forest classifier
+        # remove_hubness_and_run(x_vec, Y)
+        X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
+        print("Evaluating model", path)
 
-    # Train a Random Forest classifier
-    print("Training")
-    X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
-    classification_task(X_train, X_test, y_train, y_test)
- 
+        classification_task(X_train, X_test, y_train, y_test)
+        # classification_task_nn(X_train, X_test, y_train, y_test)
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")
-    print("Kraken Dataset:")
-    kraken_task()
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--task', type=str, required=True, help='task to be evaluated on')
+    parser.add_argument('--embedding', type=str, help='pass in single a w2v embedding')
+    args = parser.parse_args()
 
-    # print("School dataset")
-    # school_task()
+    print("Evaluating on task {}".format(args.task))
+    evaluate_task(args)
