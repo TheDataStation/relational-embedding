@@ -18,7 +18,8 @@ def task_loader(args):
         target_column = config['target_column']
         task_type = config['task_type']
 
-        df = pd.read_csv(location + target_file)
+        df = pd.read_csv(location_processed)
+        df.to_csv(location + target_file, index=False)
         df = df.drop(columns=[target_column])
         df.to_csv(location_processed, index=False)
 

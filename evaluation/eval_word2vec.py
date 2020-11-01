@@ -26,13 +26,14 @@ word2vec_embedding_storage = '../word2vec/emb/'
 word2vec_model_path_kraken = "../word2vec/emb/kraken_textified_row_and_col_quantize.emb"
 kraken_path = "../data/kraken/"
 word2vec_model_path_school = "../word2vec/school.bin"
-test_size = 0.2
+test_size = 0.1
 num_bins = 20
 
 def classification_task(X_train, X_test, y_train, y_test):
     rf = RandomForestClassifier(n_estimators = 1000)
     rf.fit(X_train, y_train)
     y_pred = rf.predict(X_test)
+    import pdb;pdb.set_trace();
     pscore = accuracy_score(y_test, y_pred)
     print("RF Test score:", pscore)
 
@@ -40,6 +41,7 @@ def classification_task_nn(X_train, X_test, y_train, y_test):
     input_size = len(X_train[0])
     model = Sequential([
                 layers.Flatten(input_shape = (input_size,)),
+                layers.Dense(64, activation = tf.nn.sigmoid),
                 layers.Dense(64, activation = tf.nn.sigmoid),                        
                 layers.Dense(10, activation = tf.nn.softmax)
             ])
@@ -97,16 +99,21 @@ def evaluate_task(args):
         # remove_hubness_and_run(x_vec, Y)
         X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
         print("Evaluating model", path)
+        # EU.remove_hubness_and_run(x_vec, Y)
 
         classification_task(X_train, X_test, y_train, y_test)
-        # classification_task_nn(X_train, X_test, y_train, y_test)
+        classification_task_nn(X_train, X_test, y_train, y_test)
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--task', type=str, required=True, help='task to be evaluated on')
-    parser.add_argument('--embedding', type=str, help='pass in single a w2v embedding')
+    parser.add_argument('--embedding', 
+        type=str, 
+        help='Pass in single a w2v embedding to evaluate instead of doing evaluation on everything'
+    )
+
     args = parser.parse_args()
 
     print("Evaluating on task {}".format(args.task))
