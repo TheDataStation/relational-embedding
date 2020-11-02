@@ -105,7 +105,7 @@ def measure_quality(ground_truth, predicted_truth):
         precision.append(flag)
     return precision
 
-def remove_hubness_and_run(X, y):
+def remove_hubness_and_run(X, y, n_neighbors=15):
     from skhubness import Hubness
     from sklearn.model_selection import cross_val_score
     from skhubness.neighbors import KNeighborsClassifier
@@ -127,17 +127,18 @@ def remove_hubness_and_run(X, y):
 
     # Measure Classfication Accuracy before and after removal 
     # vanilla kNN
-    knn_standard = KNeighborsClassifier(n_neighbors=5, metric='cosine')
-    acc_standard = cross_val_score(knn_standard, X, y, cv=5)
+    knn_standard = KNeighborsClassifier(n_neighbors=n_neighbors, metric='cosine')
+    acc_standard = cross_val_score(knn_standard, X, y, cv=10)
 
     # kNN with hubness reduction (mutual proximity)
-    knn_mp = KNeighborsClassifier(n_neighbors=10,
+    knn_mp = KNeighborsClassifier(n_neighbors=n_neighbors,
                               metric='cosine',
                               hubness='mutual_proximity')
     acc_mp = cross_val_score(knn_mp, X, y, cv=10)
 
     print(f'Accuracy (vanilla kNN): {acc_standard.mean():.3f}')
     print(f'Accuracy (kNN with hubness reduction): {acc_mp.mean():.3f}')
+    return (acc_standard.mean(), acc_mp.mean())
 
 def parse_strategy(s):
     integer_strategy = "quantize"
