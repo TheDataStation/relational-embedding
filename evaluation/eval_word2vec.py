@@ -19,21 +19,16 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score
 import tensorflow as tf
 
-K = 20 
-
 word2vec_embedding_storage = '../word2vec/emb/'
 
 word2vec_model_path_kraken = "../word2vec/emb/kraken_textified_row_and_col_quantize.emb"
-kraken_path = "../data/kraken/"
-word2vec_model_path_school = "../word2vec/school.bin"
-test_size = 0.1
+test_size = 0.2
 num_bins = 20
 
 def classification_task(X_train, X_test, y_train, y_test):
-    rf = RandomForestClassifier(n_estimators = 1000)
+    rf = RandomForestClassifier(n_estimators = 100)
     rf.fit(X_train, y_train)
     y_pred = rf.predict(X_test)
-    import pdb;pdb.set_trace();
     pscore = accuracy_score(y_test, y_pred)
     print("RF Test score:", pscore)
 
@@ -97,12 +92,11 @@ def evaluate_task(args):
 
         # Train a Random Forest classifier
         # remove_hubness_and_run(x_vec, Y)
-        X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
-        print("Evaluating model", path)
+        X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=1234)
+        
         # EU.remove_hubness_and_run(x_vec, Y)
-
         classification_task(X_train, X_test, y_train, y_test)
-        classification_task_nn(X_train, X_test, y_train, y_test)
+        # classification_task_nn(X_train, X_test, y_train, y_test)
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")

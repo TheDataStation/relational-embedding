@@ -1,35 +1,40 @@
 import argparse
 import pandas as pd
-import csv
+import numpy as np
 import os
 from os import listdir
 from os.path import isfile, join
-import numpy as np
 from tqdm import tqdm
 import networkx as nx
 import sys 
+import json
 
 sys.path.append('..')
 from relational_embedder.data_prep import data_prep_utils as dpu
 import textification.textify_relation as tr 
-
-graph = nx.Graph()
-INT_TYPE = [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]
+from collections import defaultdict 
 
 def all_files_in_path(path):
+    path = os.path.join("../", path)
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv"]
     return fs
 
 def generate_graph(args):
-    path = args.dataset
+    task = args.task
+    with open("../data/data_config.txt", "r") as jsonfile:
+        data_config = json.load(jsonfile)
+
     output = args.output 
     
-    fs = all_files_in_path(path)
+    fs = all_files_in_path(data_config[task]["location"])
     total = len(fs)
+    edges = defaultdict()
+
     current = 0 
     for path in tqdm(fs):
-        df = pd.read_csv(path, encoding = 'latin1', sep=',')
+        df = pd.read_csv(path, encoding = 'latin1', sep=',', low_memory=False)
         df = tr.quantize(df, excluding = ["eventid", "result"])
+        filename = path.split("/")[-1]
 
         columns = df.columns 
 
@@ -38,30 +43,36 @@ def generate_graph(args):
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for row in decoded_row:
-                    if (value, "row:" + row) in graph.edges():
-                        graph[value]["row:" + row]['weight'] += 1 
+                    row = filename + "row:" + row
+                    if (value, row) in edges:
+                        edges[(value, row)] += 1 
                     else:
-                        graph.add_edge(value, "row:" + row, weight = 1)
+                        edges[(value, row)] = 1
     
         for cell_value, col in tr._read_columns_from_dataframe(df, columns, integer_strategy="stringify"):
             decoded_col = dpu.encode_cell(col, grain="cell")
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for col in decoded_col:
-                    if (value, "col:" + col) in graph.edges():
-                        graph[value]["col:" + col]['weight'] += 1 
+                    col = filename + "col:" + col
+                    if (value, col) in edges:
+                        edges[(value, col)] += 1 
                     else:
-                        graph.add_edge(value, "col:" + col, weight = 1)         
+                        edges[(value, col)] = 1      
 
+    print("Adding edges now:")
+    graph = nx.Graph()
+    for edge, val in edges.items():
+        graph.add_edge(edge[0], edge[1], weight=val)
     nx.write_edgelist(graph, args.output)
 
 if __name__ == "__main__":
     print("Generating graph for input")
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', 
+    parser.add_argument('--task', 
         type=str, 
-        default='./sample/', # This is my small dataset
-        help='path to collection of relations'
+        default='sample', # This is my small dataset
+        help='task to generate relation from'
     )
 
     parser.add_argument('--output', 

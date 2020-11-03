@@ -9,31 +9,24 @@ from os.path import isfile, join
 from tqdm import tqdm
 from os import listdir
 
-from gensim.models import Word2Vec
-import word2vec
-import matplotlib.pyplot as plt
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.feature_selection import SelectFromModel
 from sklearn.metrics import accuracy_score
+import json
 
-K = 20 
-test_size = 0.2
-num_bins = 50
+test_size = 0.1
+n_estimators = 150
 kraken_path = "../data/kraken/"
-school_path = "../data/school/"
 
 def all_files_in_path(path):
-    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
+    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv"]
     return fs
 
 def join_tables_kraken(df):
     df_joined = df 
     fs = all_files_in_path(kraken_path)
     for f in fs:
-        if f == "../data/kraken/kraken.csv": 
-            continue
         df_new = pd.read_csv(f)
         try:
             df_joined = pd.merge(df_joined, df_new, left_on = "event_id", right_on = "event_id", how = "left")
@@ -41,35 +34,15 @@ def join_tables_kraken(df):
             print("i can't find matching id column in file %s, skip!" % f)
     return df_joined 
 
-def join_tables_school(df):
-    df_joined = df
-    fs = all_files_in_path(school_path)
-    for f in fs:
-        if f == "../data/school/base.csv" or f == "../data/school/schema.csv": 
-            continue
-        df_new = pd.read_csv(f)
-        try:
-            if "DBN" in df_new.columns:
-                df_joined = pd.merge(df_joined, df_new, left_on = "DBN", right_on = "DBN", how = "left")
-            if "dbn" in df_new.columns:
-                df_joined = pd.merge(df_joined, df_new, left_on = "DBN", right_on = "dbn", how = "left")
-            if f == "../data/school/2012_-_2013_School_Locations.csv":
-                df_joined = pd.merge(df_joined, df_new, left_on = "DBN", right_on = "LOCATION_NAME", how = "left")
-            print("Successfully joined with %s:", f)
-            print(df_joined.shape)
-        except Exception as e:
-            print("i can't find matching id column in file %s, skip!" % f)
-    return df_joined 
-
 def simple_random_forest(X_train, X_test, y_train, y_test):
-    rf = RandomForestClassifier(n_estimators = 100)
+    rf = RandomForestClassifier(n_estimators = n_estimators)
     rf.fit(X_train, y_train)
     y_pred = rf.predict(X_test)
     pscore = accuracy_score(y_test, y_pred)
     print("RF Test score:", pscore)
 
 def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test):
-    sel = SelectFromModel(RandomForestClassifier(n_estimators = 100))
+    sel = SelectFromModel(RandomForestClassifier(n_estimators = n_estimators))
     sel.fit(X_train, y_train)
     selected_feat= X_train.columns[(sel.get_support())]
     print("Num of selected features {} out of {}".format(len(selected_feat), len(X_train.columns)))
@@ -79,34 +52,33 @@ def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test):
 
     simple_random_forest(X_train_elim, X_test_elim, y_train, y_test)
 
-def scatter_plot():
-    plt.figure(figsize = (16, 8))
-    plt.scatter(df["f4k"], df["f109k"], c=(df["result"] == "nofail"))
-    plt.xlabel("f4k")
-    plt.ylabel("f109k")
-    plt.savefig("plot.png")
-
 if __name__ == "__main__":
     print("Loading & splitting kraken data")
-    df = pd.read_csv(os.path.join(kraken_path, "kraken.csv"))
-    df = EU.quantize(df, excluding = ["event_id", "result"])
-    df["result"] = (df["result"] == "nofail")
-    df_joined = join_tables_kraken(df)
+    with open("../data/data_config.txt", "r") as jsonfile:
+        data_config = json.load(jsonfile)
+    config = data_config["kraken"]
+    location = config["location"]
+    target_file = config["target_file"]
+    location_processed = config["location_processed"]
+    target_column = config["target_column"]
 
-    X = df.drop(['result'], axis = 1)
-    Y = df['result'].values.ravel()
-    X_train, X_test, y_train, y_test = train_test_split(X,Y, test_size = test_size, random_state=10)
-    
-    X_joined = df_joined.drop(["result"], axis = 1)
-    Y_joined = df_joined["result"].values.ravel()
-    X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(X_joined, Y_joined, test_size = test_size, random_state=10)
+    # Load data 
+    trimmed_table = pd.read_csv(os.path.join("../", location_processed), sep=',', encoding='latin')
+    full_table = pd.read_csv(os.path.join("../", location + target_file), sep=',', encoding='latin')
+    trimmed_table_joined = join_tables_kraken(trimmed_table)
+    Y = full_table[target_column]
+
+    X_train, X_test, y_train, y_test = train_test_split(trimmed_table, Y, test_size = test_size, random_state=1234)
+    X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(trimmed_table_joined, Y, test_size = test_size, random_state=1234)
     
     # Baseline 1: simple random forest 
     print("Baseline 1: Simple RF")
+    EU.remove_hubness_and_run(trimmed_table, Y)
     simple_random_forest(X_train, X_test, y_train, y_test)
 
     # Baseline 2: Join all tables & random forest
     print("Baseline 2: Joined & RF")
+    EU.remove_hubness_and_run(trimmed_table_joined, Y)
     simple_random_forest(X_train_j, X_test_j, y_train_j, y_test_j) 
 
     # Baseline 3: Join all tables & elim features & random forest

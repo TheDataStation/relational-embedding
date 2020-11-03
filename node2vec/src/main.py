@@ -67,8 +67,9 @@ def read_graph():
 	'''
 	Reads the input network in networkx.
 	'''
+	print("starting")
 	if args.weighted:
-		G = nx.read_edgelist(args.input, nodetype=str, data=(('weight',float),), create_using=nx.DiGraph())
+		G = nx.read_edgelist(args.input, nodetype=str, data=(('weight',int),), create_using=nx.DiGraph())
 	else:
 		G = nx.read_edgelist(args.input, nodetype=str, create_using=nx.DiGraph())
 		for edge in G.edges():
@@ -76,7 +77,7 @@ def read_graph():
 
 	if not args.directed:
 		G = G.to_undirected()
-
+	import pdb; pdb.set_trace;
 	return G
 
 def learn_embeddings(walks):

@@ -23,9 +23,8 @@ def _read_rows_from_dataframe(df, columns, integer_strategy='skip'):
             if (cell_value == "\\N"):
                 continue
             # We check the cell value is valid before continuing
-            # if not dpu.valid_cell(cell_value):
-            #     print(cell_value)
-            #     continue
+            if not dpu.valid_cell(cell_value):
+                continue
             # If strategy is skip, we check that first
             if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
                 if integer_strategy == 'skip':
@@ -46,8 +45,8 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
             data_values = df[c]
             for cell_value in data_values:
                 # We check the cell value is valid before continuing
-                # if not dpu.valid_cell(cell_value):
-                #     continue
+                if not dpu.valid_cell(cell_value):
+                    continue
                 if integer_strategy == 'stringify':
                     cell_value = str(cell_value)
                 elif integer_strategy == 'augment':
@@ -59,8 +58,8 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 if (cell_value == "\\N"):
                     continue
                 # We check the cell value is valid before continuing
-                # if not dpu.valid_cell(cell_value):
-                #     continue
+                if not dpu.valid_cell(cell_value):
+                    continue
                 yield cell_value, c
 
 num_bins = 10
@@ -122,8 +121,8 @@ def alex__read_rows_from_dataframe(df, columns, integer_strategy='skip'):
             if (cell_value == "\\N"):
                 continue
             # We check the cell value is valid before continuing
-            # if not dpu.valid_cell(cell_value):
-            #     continue
+            if not dpu.valid_cell(cell_value):
+                continue
             # If strategy is skip, we check that first
             if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
                 if integer_strategy == 'skip':

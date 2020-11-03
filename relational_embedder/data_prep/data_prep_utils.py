@@ -19,10 +19,10 @@ def valid_cell(value):
     if value == "":
         return False
     # Filter out free text and too small
-    if len(str(value)) > MAX_CELL_LEN:
-        return False
-    if len(str(value)) < MIN_CELL_LEN:
-        return False
+    # if len(str(value)) > MAX_CELL_LEN:
+    #     return False
+    # if len(str(value)) < MIN_CELL_LEN:
+    #     return False
     # Filter out dates
     if DATE_PATTERN.match(str(value)) is not None:
         return False
