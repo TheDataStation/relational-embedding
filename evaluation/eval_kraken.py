@@ -73,12 +73,12 @@ if __name__ == "__main__":
     
     # Baseline 1: simple random forest 
     print("Baseline 1: Simple RF")
-    EU.remove_hubness_and_run(trimmed_table, Y)
+    EU.remove_hubness_and_run(trimmed_table, Y, n_neighbors=5)
     simple_random_forest(X_train, X_test, y_train, y_test)
 
     # Baseline 2: Join all tables & random forest
     print("Baseline 2: Joined & RF")
-    EU.remove_hubness_and_run(trimmed_table_joined, Y)
+    EU.remove_hubness_and_run(trimmed_table_joined, Y, n_neighbors=5)
     simple_random_forest(X_train_j, X_test_j, y_train_j, y_test_j) 
 
     # Baseline 3: Join all tables & elim features & random forest

@@ -7,6 +7,7 @@ from collections import defaultdict
 from os.path import isfile, join
 from tqdm import tqdm
 import numpy as np
+import json
 
 from relational_embedder.data_prep import data_prep_utils as dpu
 
@@ -14,7 +15,6 @@ RELATION_STRATEGY = ['row_and_col', 'row', 'col', 'alex']
 INTEGER_STRATEGY = ['skip', 'stringify', 'augment', "quantize"]
 TEXTIFICATION_GRAIN = ['cell', 'token']
 OUTPUT_FORMAT = ['sequence_text', 'windowed_text']
-
 
 def _read_rows_from_dataframe(df, columns, integer_strategy='skip'):
     for index, el in df.iterrows():
@@ -34,7 +34,6 @@ def _read_rows_from_dataframe(df, columns, integer_strategy='skip'):
                 elif integer_strategy == 'augment':
                     cell_value = str(c) + "_<#>_" + str(el[c])  # special symbol to tell apart augmentation from space
             yield cell_value, index
-
 
 def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
     for c in columns:
@@ -62,8 +61,11 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                     continue
                 yield cell_value, c
 
-num_bins = 10
 def quantize(df, excluding = [], hist = "width"):
+    with open("embedding_config.json", "r") as jsonfile:
+        embeddding_config = json.load(jsonfile)
+    num_bins = embeddding_config["num_bins"]
+
     cols = df.columns
     bin_percentile = 100 / num_bins
     for col in cols:

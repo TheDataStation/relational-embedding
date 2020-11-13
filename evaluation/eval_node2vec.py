@@ -19,11 +19,12 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score
 import tensorflow as tf
 
-K = 20 
-
 node2vec_embedding_storage = '../node2vec/emb/'
-test_size = 0.2
-num_bins = 20
+
+with open("../embedding_config.json", "r") as jsonfile:
+    embeddding_config = json.load(jsonfile)
+num_bins = embeddding_config["num_bins"]
+test_size = embeddding_config["test_size"]
 
 def classification_task(X_train, X_test, y_train, y_test, n_estimators=100):
     rf = RandomForestClassifier(n_estimators = n_estimators)

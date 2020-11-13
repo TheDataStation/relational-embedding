@@ -11,14 +11,16 @@ import word2vec
 from os.path import isfile, join
 from tqdm import tqdm
 from os import listdir
+import json
 
 from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.ensemble.forest import RandomForestClassifier
 
-K = 20 
-test_size = 0.2
-num_bins = 20
+with open("../embedding_config.json", "r") as jsonfile:
+    embeddding_config = json.load(jsonfile)
+num_bins = embeddding_config["num_bins"]
+
 taxi_data_path = "../data/taxi_small/data"
 word2vec_model_path = "../word2vec/taxi_small.bin"
 

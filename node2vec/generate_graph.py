@@ -45,7 +45,7 @@ def generate_graph(args):
                 for row in decoded_row:
                     row = filename + "row:" + row
                     if (value, row) in edges:
-                        edges[(value, row)] += 1 
+                        edges[(value, row)] += 1
                     else:
                         edges[(value, row)] = 1
     
@@ -56,9 +56,9 @@ def generate_graph(args):
                 for col in decoded_col:
                     col = filename + "col:" + col
                     if (value, col) in edges:
-                        edges[(value, col)] += 1 
+                        edges[(value, col)] += 0.3
                     else:
-                        edges[(value, col)] = 1      
+                        edges[(value, col)] = 0.3    
 
     print("Adding edges now:")
     graph = nx.Graph()

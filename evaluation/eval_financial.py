@@ -19,10 +19,6 @@ from sklearn.feature_selection import SelectFromModel
 from sklearn.metrics import accuracy_score
 import json
 
-K = 20 
-test_size = 0.2
-num_bins = 50
-
 def all_files_in_path(path):
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
     return fs
@@ -32,10 +28,11 @@ def join_tables_kraken(df):
     return df
 
 def simple_random_forest(X_train, X_test, y_train, y_test):
-    rf = RandomForestClassifier(n_estimators = 100)
+    rf = RandomForestClassifier(n_estimators = 200)
     rf.fit(X_train, y_train)
     y_pred = rf.predict(X_test)
     pscore = accuracy_score(y_test, y_pred)
+    import pdb; pdb.set_trace();
     print("RF Test score:", pscore)
 
 def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test):
@@ -48,13 +45,6 @@ def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test):
     X_test_elim = X_test[selected_feat]
 
     simple_random_forest(X_train_elim, X_test_elim, y_train, y_test)
-
-def scatter_plot():
-    plt.figure(figsize = (16, 8))
-    plt.scatter(df["f4k"], df["f109k"], c=(df["result"] == "nofail"))
-    plt.xlabel("f4k")
-    plt.ylabel("f109k")
-    plt.savefig("plot.png")
 
 if __name__ == "__main__":
     print("Loading & splitting financial data")
@@ -83,11 +73,11 @@ if __name__ == "__main__":
     # Y_joined = df_joined["result"].values.ravel()
     # X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(X_joined, Y_joined, test_size = test_size, random_state=10)
     
-    # Baseline 1: simple random forest 
-    print(X_train.head(5))
-    print(y_train.head(5))
+    # Baseline 1: simple random forest
     print("Baseline 1: Simple RF")
-    EU.remove_hubness_and_run(trimmed_table, Y)
+    for n in [3,5,10,15,20,50]:
+        EU.remove_hubness_and_run(trimmed_table, Y, n_neighbors=n)
+    
     simple_random_forest(X_train, X_test, y_train, y_test)
 
     # Baseline 2: Join all tables & random forest

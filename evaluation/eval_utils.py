@@ -7,8 +7,11 @@ from textification import textify_relation as tr
 
 from os.path import isfile, join
 from os import listdir
+import json
 
-num_bins = 10
+with open("../embedding_config.json", "r") as jsonfile:
+    embeddding_config = json.load(jsonfile)
+num_bins = embeddding_config["num_bins"]
 
 def all_files_in_path(path, task):
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f.find(task) != -1]
@@ -43,7 +46,7 @@ def vectorize_df(df, model, model_type = "word2vec"):
     
     if model_type == "node2vec":
         for i in range(length):
-            x_vectorized[i] += list(model["row:" + str(i)])
+            x_vectorized[i] += list(model["kraken.csv"+"row:" + str(i)])
     return x_vectorized
 
 # Assume that textification strategy is skip (integer), row & col, sequence text
