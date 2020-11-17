@@ -27,7 +27,7 @@ def parse_args():
 	parser.add_argument('--output', nargs='?', default='emb/karate.emb',
 	                    help='Embeddings path')
 
-	parser.add_argument('--dimensions', type=int, default=50,
+	parser.add_argument('--dimensions', type=int, default=150,
 	                    help='Number of dimensions. Default is 150.')
 
 	parser.add_argument('--walk-length', type=int, default=80,
@@ -36,10 +36,10 @@ def parse_args():
 	parser.add_argument('--num-walks', type=int, default=20,
 	                    help='Number of walks per source. Default is 10.')
 
-	parser.add_argument('--window-size', type=int, default=10,
+	parser.add_argument('--window-size', type=int, default=40,
                     	help='Context size for optimization. Default is 10.')
 
-	parser.add_argument('--iter', default=10, type=int,
+	parser.add_argument('--iter', default=50, type=int,
                       help='Number of epochs in SGD')
 
 	parser.add_argument('--workers', type=int, default=8,

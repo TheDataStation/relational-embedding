@@ -46,7 +46,7 @@ def vectorize_df(df, model, model_type = "word2vec"):
     
     if model_type == "node2vec":
         for i in range(length):
-            x_vectorized[i] += list(model["kraken.csv"+"row:" + str(i)])
+            x_vectorized[i] += list(model["row:" + str(i)])
     return x_vectorized
 
 # Assume that textification strategy is skip (integer), row & col, sequence text
@@ -84,22 +84,6 @@ def textify_df(df, ts = "row_and_col", integer_strategy = "quantize"):
                     offset = 0
                     cnt += 1
     return input
-
-def obtain_ground_truth_name(sample_size = 1000):
-    df = pd.read_csv(name_basics_file, encoding = 'latin1', sep = '\t')
-    sample = df.head(n = sample_size)
-
-    ground_truth = textify_df(sample[['primaryName']])
-    sample_query = textify_df(sample.drop(['primaryName'], axis = 1))
-    return sample_query, ground_truth
-
-# def obtain_ground_truth_profession(sample_size = 1000):
-#     df = pd.read_csv(name_basics_file, encoding = 'latin1', sep = '\t')
-#     sample = df.sample(n = sample_size)
-
-#     ground_truth = textify_df(sample['primaryProfession'])
-#     sample_query = textify_df(sample.drop(['primaryProfession'], axis = 1)
-#     return sample_query.values.tolist(), ground_truth.values.tolist()
 
 def measure_quality(ground_truth, predicted_truth):
     precision = [] 
