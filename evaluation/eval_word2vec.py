@@ -75,7 +75,7 @@ def evaluate_task(args):
     if args.task == "financials":
         Y = Y.apply(lambda x: ord(x) - ord('A'))
     if args.task == "sample":
-        Y = Y.apply(lambda x: int(x) > 500)
+        Y = Y.apply(lambda x: int(x / 200))
 
     # Set embeddings that are to be evaluated 
     all_embeddings_path = [] 
@@ -93,7 +93,7 @@ def evaluate_task(args):
         df_textified = EU.textify_df(trimmed_table, textification_strategy, integer_strategy)
         x_vec = pd.DataFrame(EU.vectorize_df(df_textified, model, model_type = "word2vec"))
         x_vec = x_vec.dropna(axis=1)
-        
+
         # Train a Random Forest classifier
         X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=1234)
         

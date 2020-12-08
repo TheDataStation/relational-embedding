@@ -1,14 +1,20 @@
 # Given an embedding, visualize the embedding with PCA 
+
+import sys
+sys.path.append('..')
+
 import numpy as np
 import matplotlib.pyplot as plt
 from gensim.models import Word2Vec, KeyedVectors
 from sklearn.decomposition import PCA
 import seaborn as sns
 import pandas as pd
+import eval_utils as EU 
 
 def convert_code_to_three_categories(x):
     # This is purely to show that the method works on the sample dataset
-    letters = "".join([i for i in x if not i.isdigit()])
+    if "'" in x: x = x.split("'")[1]
+    letters = "".join([i for i in x if i.isalpha()])
     div = "".join([i for i in x if i.isdigit()])
     if div != "": 
         div = str(int(div) % 3)
@@ -25,9 +31,8 @@ def display_pca_scatterplot(path_to_model, words=None):
         PCA().fit_transform(word_vectors)[:,:2], 
         columns = ["x", "y"]
     )
-    
     if "word2vec" in path_to_model: 
-        twodim["type"] = pd.Series(words).apply(lambda x: x.split("'")[-2])
+        twodim["type"] = pd.Series(words).apply(lambda x: convert_code_to_three_categories(x))
 
     if "node2vec" in path_to_model:
         twodim["type"] = pd.Series(words).apply(
@@ -39,7 +44,13 @@ def display_pca_scatterplot(path_to_model, words=None):
     plt.savefig("./visualizer_plot/" + model_name.split(".")[0] + ".png")
 
 
+node2vec_embedding_storage = '../node2vec/emb/'
+word2vec_embedding_storage = '../word2vec/emb/'
 if __name__ == "__main__":
     # used embeddings from node2vec for testing purposes
-    path_to_model = '../node2vec/emb/sample.emb'
-    display_pca_scatterplot(path_to_model)
+    task = "kraken"
+    all_n2v_emb_path = EU.all_files_in_path(node2vec_embedding_storage, task)
+    all_w2v_emb_path = EU.all_files_in_path(word2vec_embedding_storage, task)
+    for path_to_model in all_w2v_emb_path + all_n2v_emb_path:
+        print(path_to_model)
+        display_pca_scatterplot(path_to_model)

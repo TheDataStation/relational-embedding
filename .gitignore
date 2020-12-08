@@ -66,3 +66,7 @@ data/*
 .project
 .settings
 .idea
+
+
+# plots 
+*.png

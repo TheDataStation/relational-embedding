@@ -21,11 +21,9 @@ def all_files_in_path(path):
 
 def generate_graph(args):
     task = args.task
+    output = "./graph/{}.edgelist".format(task)
     with open("../data/data_config.txt", "r") as jsonfile:
         data_config = json.load(jsonfile)
-
-    output = args.output 
-    
     fs = all_files_in_path(data_config[task]["location"])
     total = len(fs)
     edges = defaultdict()
@@ -35,7 +33,6 @@ def generate_graph(args):
         df = pd.read_csv(path, encoding = 'latin1', sep=',', low_memory=False)
         df = tr.quantize(df, excluding = ["eventid", "result"])
         filename = path.split("/")[-1]
-
         columns = df.columns 
 
         for cell_value, row in tr._read_rows_from_dataframe(df, columns, integer_strategy="stringify"):
@@ -60,11 +57,10 @@ def generate_graph(args):
                     else:
                         edges[(value, col)] = 0.3    
 
-    print("Adding edges now:")
     graph = nx.Graph()
     for edge, val in edges.items():
         graph.add_edge(edge[0], edge[1], weight=val)
-    nx.write_edgelist(graph, args.output)
+    nx.write_edgelist(graph, output)
 
 if __name__ == "__main__":
     print("Generating graph for input")
@@ -73,11 +69,6 @@ if __name__ == "__main__":
         type=str, 
         default='sample', # This is my small dataset
         help='task to generate relation from'
-    )
-
-    parser.add_argument('--output', 
-        type=str, 
-        default='./graph/sample.edgelist'
     )
 
     args = parser.parse_args()

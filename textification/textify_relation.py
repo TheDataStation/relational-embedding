@@ -62,7 +62,7 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 yield cell_value, c
 
 def quantize(df, excluding = [], hist = "width"):
-    with open("embedding_config.json", "r") as jsonfile:
+    with open("../embedding_config.json", "r") as jsonfile:
         embeddding_config = json.load(jsonfile)
     num_bins = embeddding_config["num_bins"]
 
