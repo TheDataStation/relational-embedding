@@ -1,35 +1,45 @@
 # Given an embedding, visualize the embedding with PCA 
 import numpy as np
 import matplotlib.pyplot as plt
-plt.style.use('ggplot')
-plt.switch_backend('agg')
-import word2vec
+from gensim.models import Word2Vec, KeyedVectors
 from sklearn.decomposition import PCA
+import seaborn as sns
+import pandas as pd
 
-def display_pca_scatterplot(model, words=None, sample=0, output = "display.png", vocab_list = []):
-    colors = ['r'] * len(words) + ['b'] * sample
-    if sample > 0:
-        words_original = words
-        words = np.concatenate((np.array(words), np.random.choice(list(vocab_list), sample)), axis=None)
-        
+def convert_code_to_three_categories(x):
+    # This is purely to show that the method works on the sample dataset
+    letters = "".join([i for i in x if not i.isdigit()])
+    div = "".join([i for i in x if i.isdigit()])
+    if div != "": 
+        div = str(int(div) % 3)
+    return "".join(letters + div)
+
+def display_pca_scatterplot(path_to_model, words=None):
+    model = KeyedVectors.load_word2vec_format(path_to_model)
+    model_name = path_to_model.split("/")[-1]
+    if words is None: 
+        words = list(model.vocab.keys())
     word_vectors = np.array([model[w] for w in words])
 
-    twodim = PCA().fit_transform(word_vectors)[:,:2]
+    twodim = pd.DataFrame(
+        PCA().fit_transform(word_vectors)[:,:2], 
+        columns = ["x", "y"]
+    )
+    
+    if "word2vec" in path_to_model: 
+        twodim["type"] = pd.Series(words).apply(lambda x: x.split("'")[-2])
 
-    print("Evaluation visualizer: Ready to plot")
-    plt.figure(figsize=(10, 10))
-    plt.scatter(twodim[:,0], twodim[:,1], edgecolors='k', c=colors)
-    for word, (x,y) in zip(words, twodim):
-        if (word in words_original):
-            plt.text(x+0.05, y+0.05, word)
-    plt.savefig(output)
+    if "node2vec" in path_to_model:
+        twodim["type"] = pd.Series(words).apply(
+            lambda x: "row&col" if "row" in x or "col" in x else convert_code_to_three_categories(x)
+        )
+
+    plt.figure(figsize=(15,15))
+    sns.scatterplot(data = twodim, x="x", y="y", hue="type")
+    plt.savefig("./visualizer_plot/" + model_name.split(".")[0] + ".png")
 
 
 if __name__ == "__main__":
-    # used embeddings from word2vec for testing purposes
-    path_to_model = "./word2vec/word2vec_neg_20_i50.bin"
-    model = word2vec.load(path_to_model, encoding = "ISO-8859-1")
-
-    # Display with PCA on two dimensions
-    cells_array = ["('tt0072308'_'titleid')", "('nm0000001'_'nconst')", "('tt0053137'_'titleid')", "('tt0043044'_'titleid')", "('tt0050419'_'titleid')"]
-    display_pca_scatterplot(model, cells_array, 600, output = "dummy_name.png", vocab_list = model.vocab)
+    # used embeddings from node2vec for testing purposes
+    path_to_model = '../node2vec/emb/sample.emb'
+    display_pca_scatterplot(path_to_model)

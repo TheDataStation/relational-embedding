@@ -43,7 +43,7 @@ def generate_graph(args):
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for row in decoded_row:
-                    row = filename + "row:" + row
+                    row = "row:" + row
                     if (value, row) in edges:
                         edges[(value, row)] += 1
                     else:
@@ -54,7 +54,7 @@ def generate_graph(args):
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for col in decoded_col:
-                    col = filename + "col:" + col
+                    col = "col:" + col
                     if (value, col) in edges:
                         edges[(value, col)] += 0.3
                     else:
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--output', 
         type=str, 
-        default='./graph/textified.edgelist'
+        default='./graph/sample.edgelist'
     )
 
     args = parser.parse_args()

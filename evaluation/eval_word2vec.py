@@ -21,8 +21,6 @@ import tensorflow as tf
 
 word2vec_embedding_storage = '../word2vec/emb/'
 
-word2vec_model_path_kraken = "../word2vec/emb/kraken_textified_row_and_col_quantize.emb"
-
 with open("../embedding_config.json", "r") as jsonfile:
     embeddding_config = json.load(jsonfile)
 test_size = embeddding_config["test_size"]
@@ -50,12 +48,6 @@ def classification_task_nn(task, X_train, X_test, y_train, y_test):
         metrics=['accuracy']
     )
 
-    if task == "kraken":
-        y_train = y_train.apply(lambda x: x == "nofail")
-        y_test = y_test.apply(lambda x: x == "nofail")
-    else: 
-        y_train = y_train.apply(lambda x: ord(x) - ord('A'))
-        y_test = y_test.apply(lambda x: ord(x) - ord('A'))
     model.fit(X_train, y_train, epochs = 25)
     results = model.evaluate(X_test, y_test)
     print(results)
@@ -78,6 +70,13 @@ def evaluate_task(args):
     full_table = pd.read_csv(os.path.join("../", location + target_file), sep=',', encoding='latin')
     Y = full_table[target_column]
 
+    if args.task == "kraken":
+        Y = Y.apply(lambda x: x == "nofail")
+    if args.task == "financials":
+        Y = Y.apply(lambda x: ord(x) - ord('A'))
+    if args.task == "sample":
+        Y = Y.apply(lambda x: int(x) > 500)
+
     # Set embeddings that are to be evaluated 
     all_embeddings_path = [] 
     if args.embedding is not None:
@@ -94,8 +93,6 @@ def evaluate_task(args):
         df_textified = EU.textify_df(trimmed_table, textification_strategy, integer_strategy)
         x_vec = pd.DataFrame(EU.vectorize_df(df_textified, model, model_type = "word2vec"))
         x_vec = x_vec.dropna(axis=1)
-        # import pdb; pdb.set_trace()
-
         
         # Train a Random Forest classifier
         X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=1234)

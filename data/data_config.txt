@@ -26,7 +26,7 @@
     "sample": {
         "location": "./data/sample/",
         "target_file": "base_processed.csv",
-        "target_column": "res",
+        "target_column": "money",
         "name": "sample",
         "task_type": "regression",
         "location_processed": "./data/sample/base.csv"

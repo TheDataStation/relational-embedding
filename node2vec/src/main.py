@@ -36,10 +36,10 @@ def parse_args():
 	parser.add_argument('--num-walks', type=int, default=20,
 	                    help='Number of walks per source. Default is 10.')
 
-	parser.add_argument('--window-size', type=int, default=40,
+	parser.add_argument('--window-size', type=int, default=10,
                     	help='Context size for optimization. Default is 10.')
 
-	parser.add_argument('--iter', default=50, type=int,
+	parser.add_argument('--iter', default=10, type=int,
                       help='Number of epochs in SGD')
 
 	parser.add_argument('--workers', type=int, default=8,
