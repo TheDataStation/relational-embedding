@@ -10,6 +10,7 @@ from sklearn.decomposition import PCA
 import seaborn as sns
 import pandas as pd
 import eval_utils as EU 
+import argparse
 
 def convert_code_to_three_categories(x):
     # This is purely to show that the method works on the sample dataset
@@ -20,7 +21,7 @@ def convert_code_to_three_categories(x):
         div = str(int(div) % 3)
     return "".join(letters + div)
 
-def display_pca_scatterplot(path_to_model, words=None):
+def display_pca_scatterplot(path_to_model, task, words=None):
     model = KeyedVectors.load_word2vec_format(path_to_model)
     model_name = path_to_model.split("/")[-1]
     if words is None: 
@@ -41,16 +42,26 @@ def display_pca_scatterplot(path_to_model, words=None):
 
     plt.figure(figsize=(15,15))
     sns.scatterplot(data = twodim, x="x", y="y", hue="type")
-    plt.savefig("./visualizer_plot/" + model_name.split(".")[0] + ".png")
+    plt.savefig("./embedding_plots/" + task + "/" + model_name.split(".")[0] + ".png")
 
 
 node2vec_embedding_storage = '../node2vec/emb/'
 word2vec_embedding_storage = '../word2vec/emb/'
 if __name__ == "__main__":
     # used embeddings from node2vec for testing purposes
-    task = "kraken"
+    print("Visualizing results of specific tasks via PCA:")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--task', 
+        type=str, 
+        required=True, 
+        help='task to be evaluated on'
+    )
+
+    args = parser.parse_args()
+    task = args.task
     all_n2v_emb_path = EU.all_files_in_path(node2vec_embedding_storage, task)
     all_w2v_emb_path = EU.all_files_in_path(word2vec_embedding_storage, task)
     for path_to_model in all_w2v_emb_path + all_n2v_emb_path:
         print(path_to_model)
-        display_pca_scatterplot(path_to_model)
+        display_pca_scatterplot(path_to_model, task)

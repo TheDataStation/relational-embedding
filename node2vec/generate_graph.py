@@ -41,10 +41,7 @@ def generate_graph(args):
             for value in decoded_value:
                 for row in decoded_row:
                     row = "row:" + row
-                    if (value, row) in edges:
-                        edges[(value, row)] += 1
-                    else:
-                        edges[(value, row)] = 1
+                    edges[(value, row)] = 1
     
         for cell_value, col in tr._read_columns_from_dataframe(df, columns, integer_strategy="stringify"):
             decoded_col = dpu.encode_cell(col, grain="cell")
@@ -52,14 +49,13 @@ def generate_graph(args):
             for value in decoded_value:
                 for col in decoded_col:
                     col = "col:" + col
-                    if (value, col) in edges:
-                        edges[(value, col)] += 0.3
-                    else:
-                        edges[(value, col)] = 0.3    
+                    edges[(value, col)] = 1  
 
     graph = nx.Graph()
+    print("Edge number:", len(edges)) 
     for edge, val in edges.items():
         graph.add_edge(edge[0], edge[1], weight=val)
+
     nx.write_edgelist(graph, output)
 
 if __name__ == "__main__":

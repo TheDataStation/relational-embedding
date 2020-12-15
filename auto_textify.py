@@ -44,8 +44,8 @@ if __name__ == "__main__":
         paths = all_files_in_path("./textified_data/", args.task)
         for path in tqdm(paths):
             sentences = SentenceIterator(path) 
-            for length in [5, 50, 100]:
-                model = Word2Vec(sentences, size = length, workers = 24, window = 10, min_count = 0, sg = 0, iter = 80)
+            for length in [5, 50, 100, 150]:
+                model = Word2Vec(sentences, size = length, workers = 8, window = 10, min_count = 0, sg = 1, iter = 80)
                 output_name = "./word2vec/emb/" + str(length) + path.split("/")[-1].replace('txt', 'emb')
                 model.wv.save_word2vec_format(output_name)
 

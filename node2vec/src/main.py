@@ -77,7 +77,6 @@ def read_graph():
 
 	if not args.directed:
 		G = G.to_undirected()
-	import pdb; pdb.set_trace;
 	return G
 
 def learn_embeddings(walks):
@@ -98,6 +97,13 @@ def main(args):
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
 	print("Walking Done!")
+
+	walks_save_path = "walks/" + args.input.split("/")[-1] + ".txt"
+	with open(walks_save_path, 'w') as filehandle:
+		for walk in walks: 
+			filehandle.writelines("%s " % place for place in walk)
+			filehandle.writelines("\n")
+
 	learn_embeddings(walks)
 
 if __name__ == "__main__":

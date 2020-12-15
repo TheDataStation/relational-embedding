@@ -8,6 +8,7 @@ from os.path import isfile, join
 from tqdm import tqdm
 import numpy as np
 import json
+import random
 
 from relational_embedder.data_prep import data_prep_utils as dpu
 
@@ -62,8 +63,13 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 yield cell_value, c
 
 def quantize(df, excluding = [], hist = "width"):
-    with open("../embedding_config.json", "r") as jsonfile:
-        embeddding_config = json.load(jsonfile)
+    try:
+        with open("../embedding_config.json", "r") as jsonfile:
+            embeddding_config = json.load(jsonfile)
+    except FileNotFoundError:
+        with open("./embedding_config.json", "r") as jsonfile:
+            embeddding_config = json.load(jsonfile)
+
     num_bins = embeddding_config["num_bins"]
 
     cols = df.columns
@@ -102,18 +108,20 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
         # Check if relation is valid. Otherwise skip to next
         # if not dpu.valid_relation(df):
             # continue
-        columns = df.columns
         with open(output_file, 'a') as f:
-            # Rows
-            for cell_value in _read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    f.write(" " + cv)
-            # Columns
-            for cell_value in _read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    f.write(" " + cv)
+            for _ in range(20):
+                df = df.iloc[np.random.permutation(len(df))]
+                df = df[np.random.permutation(df.columns)]
+                # Rows
+                for cell_value in _read_rows_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
+                    values = dpu.encode_cell(cell_value, grain=grain)
+                    for cv in values:
+                        f.write(" " + cv)
+                # Columns
+                for cell_value in _read_columns_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
+                    values = dpu.encode_cell(cell_value, grain=grain)
+                    for cv in values:
+                        f.write(" " + cv)
     f.close()
 
 def alex__read_rows_from_dataframe(df, columns, integer_strategy='skip'):
@@ -153,10 +161,13 @@ def alex__serialize_row_col(paths, output_file, integer_strategy=None, grain=Non
         columns = df.columns
         with open(output_file, 'a') as f:
             # Rows
-            for cell_value, c, index in alex__read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
-                values = dpu.encode_cell((cell_value, c), grain=grain)
-                for cv in values:
-                    f.write(" " + cv)
+            for _ in range(20):
+                df = df.iloc[np.random.permutation(len(df))]
+                df = df[np.random.permutation(df.columns)]
+                for cell_value, c, index in alex__read_rows_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
+                    values = dpu.encode_cell((cell_value, c), grain=grain)
+                    for cv in values:
+                        f.write(" " + cv)
     
     f.close()
 
@@ -221,12 +232,15 @@ def serialize_row(paths, output_file, integer_strategy=None, grain=None, debug=F
         columns = df.columns
         
         with open(output_file, 'a') as f:
-            # Rows
-            for cell_value in _read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
-                # If valid, we clean and format it and return it
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    f.write(" " + cv)
+            for _ in range(20):
+                df = df.iloc[np.random.permutation(len(df))]
+                df = df[np.random.permutation(df.columns)]
+                # Rows
+                for cell_value in _read_rows_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
+                    # If valid, we clean and format it and return it
+                    values = dpu.encode_cell(cell_value, grain=grain)
+                    for cv in values:
+                        f.write(" " + cv)
 
 
 def read_column_values(path, integer_strategy, grain, dataframe=None):
@@ -287,11 +301,14 @@ def serialize_column(paths, output_file, integer_strategy=None, grain=None, debu
         #     continue
         columns = df.columns
         with open(output_file, 'a') as f:
-            # Columns
-            for cell_value in _read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    f.write(" " + cv)
+            for _ in range(20):
+                df = df.iloc[np.random.permutation(len(df))]
+                df = df[np.random.permutation(df.columns)]
+                # Columns
+                for cell_value in _read_columns_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
+                    values = dpu.encode_cell(cell_value, grain=grain)
+                    for cv in values:
+                        f.write(" " + cv)
 
 
 def window_row(paths, output_file, integer_strategy=None, grain=None, debug=False):
