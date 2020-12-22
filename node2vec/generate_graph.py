@@ -19,6 +19,29 @@ def all_files_in_path(path):
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv"]
     return fs
 
+class Counter:
+    def __init__(self):
+        self.vocab = dict()
+        self.cnt = 0
+    
+    def get(self, token):
+        if token not in self.vocab:
+            self.vocab[token] = self.cnt 
+            self.cnt += 1 
+        return str(self.vocab[token])
+    
+    def save(self, output_path):
+        import pickle
+        f = open(output_path,"wb")
+        pickle.dump(self.vocab, f)
+        f.close()
+
+    def load(self, input_path):
+        import pickle
+        f = open(input_path, "rb")
+        self.vocab = pickle.load(f)
+        self.cnt = len(self.vocab) - 1
+
 def generate_graph(args):
     task = args.task
     output = "./graph/{}.edgelist".format(task)
@@ -26,7 +49,7 @@ def generate_graph(args):
         data_config = json.load(jsonfile)
     fs = all_files_in_path(data_config[task]["location"])
     total = len(fs)
-    edges = defaultdict()
+    edges = set()
 
     current = 0 
     for path in tqdm(fs):
@@ -40,23 +63,28 @@ def generate_graph(args):
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for row in decoded_row:
-                    row = "row:" + row
-                    edges[(value, row)] = 1
+                    row_name = path + "row:" + row
+                    edges.add((value, row_name))
     
         for cell_value, col in tr._read_columns_from_dataframe(df, columns, integer_strategy="stringify"):
             decoded_col = dpu.encode_cell(col, grain="cell")
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for col in decoded_col:
-                    col = "col:" + col
-                    edges[(value, col)] = 1  
+                    col_name = "col:" + col
+                    edges.add((value, col_name))
 
     graph = nx.Graph()
+    cc = Counter()
+
     print("Edge number:", len(edges)) 
-    for edge, val in edges.items():
-        graph.add_edge(edge[0], edge[1], weight=val)
+    with open(output + ".txt", "w") as f:
+        for node_x, node_y in edges:
+            graph.add_edge(node_x, node_y)
+            f.write(cc.get(node_x) + " " + cc.get(node_y) + "\n")
 
     nx.write_edgelist(graph, output)
+    cc.save(output + "dictionary.pickle")
 
 if __name__ == "__main__":
     print("Generating graph for input")

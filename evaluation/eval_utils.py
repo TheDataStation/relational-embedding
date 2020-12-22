@@ -47,6 +47,22 @@ def vectorize_df(df, model, model_type = "word2vec"):
     if model_type == "node2vec":
         for i in range(length):
             x_vectorized[i] += list(model["row:" + str(i)])
+            row = df[i]
+            for j in range(len(row)):
+                if row[j] in model.vocab:
+                    x_vectorized[i] += list(model[row[j]])
+    
+    if model_type == "proNE":
+        import pdb; pdb.set_trace()
+        from node2vec.generate_graph import Counter
+        cc = Counter()
+        cc.load("../node2vec/graph/financial.edgelistdictionary.pickle")
+        for i in range(length):
+            x_vectorized[i] += list(model[cc.get("row:" + str(i))])
+            row = df[i]
+            for j in range(len(row)):
+                if row[j] in model.vocab:
+                    x_vectorized[i] += list(model[row[j]])
     return x_vectorized
 
 # Assume that textification strategy is skip (integer), row & col, sequence text

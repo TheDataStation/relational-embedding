@@ -37,15 +37,16 @@ def classification_task_nn(task, X_train, X_test, y_train, y_test):
     input_size = X_train.shape[1]
     model = tf.keras.Sequential([
         layers.Flatten(input_shape = (input_size,)),
-        tf.keras.layers.Dense(128, activation='softmax'),
-        tf.keras.layers.Dense(64, activation='softmax'),
-        tf.keras.layers.Dense(1, activation='softmax')
+        tf.keras.layers.Dense(128, activation='sigmoid'),
+        tf.keras.layers.Dense(64, activation='sigmoid'),
+        tf.keras.layers.Dense(64, activation='sigmoid'),
+        tf.keras.layers.Dense(1, activation='sigmoid')
     ])
     
     model.compile(
-        loss=tf.keras.losses.CategoricalCrossentropy(),
-        optimizer = 'adam',
-        metrics=['accuracy']
+        optimizer='sgd',
+        loss='mse',
+        metrics=['accuracy', tf.keras.metrics.CategoricalCrossentropy()]
     )
 
     model.fit(X_train, y_train, epochs = 25)
@@ -72,7 +73,7 @@ def evaluate_task(args):
 
     if args.task == "kraken":
         Y = Y.apply(lambda x: x == "nofail")
-    if args.task == "financials":
+    if args.task == "financial":
         Y = Y.apply(lambda x: ord(x) - ord('A'))
     if args.task == "sample":
         Y = Y.apply(lambda x: int(x / 200))
@@ -102,7 +103,7 @@ def evaluate_task(args):
 
         for n_estimators in [10, 50]:
             classification_task(X_train, X_test, y_train, y_test, n_estimators=n_estimators)
-        # classification_task_nn(args.task, X_train, X_test, y_train, y_test)
+        classification_task_nn(args.task, X_train, X_test, y_train, y_test)
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")

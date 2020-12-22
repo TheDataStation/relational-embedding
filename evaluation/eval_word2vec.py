@@ -72,7 +72,7 @@ def evaluate_task(args):
 
     if args.task == "kraken":
         Y = Y.apply(lambda x: x == "nofail")
-    if args.task == "financials":
+    if args.task == "financial":
         Y = Y.apply(lambda x: ord(x) - ord('A'))
     if args.task == "sample":
         Y = Y.apply(lambda x: int(x / 200))

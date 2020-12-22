@@ -34,10 +34,9 @@ def display_pca_scatterplot(path_to_model, task, words=None):
     )
     if "word2vec" in path_to_model: 
         twodim["type"] = pd.Series(words).apply(lambda x: convert_code_to_three_categories(x))
-
     if "node2vec" in path_to_model:
         twodim["type"] = pd.Series(words).apply(
-            lambda x: "row&col" if "row" in x or "col" in x else convert_code_to_three_categories(x)
+            lambda x: "row&col" if "row" in x or "col" in x else "else"
         )
 
     plt.figure(figsize=(15,15))

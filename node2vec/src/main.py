@@ -21,10 +21,16 @@ def parse_args():
 	'''
 	parser = argparse.ArgumentParser(description="Run node2vec.")
 
-	parser.add_argument('--input', nargs='?', default='graph/karate.edgelist',
+	parser.add_argument('--task', 
+		type=str, 
+		default="",
+		help="task to generate embedding from"
+    )
+
+	parser.add_argument('--input', nargs='?', default='',
 	                    help='Input graph path')
 
-	parser.add_argument('--output', nargs='?', default='emb/karate.emb',
+	parser.add_argument('--output', nargs='?', default='',
 	                    help='Embeddings path')
 
 	parser.add_argument('--dimensions', type=int, default=150,
@@ -56,12 +62,14 @@ def parse_args():
 	parser.add_argument('--unweighted', dest='unweighted', action='store_false')
 	parser.set_defaults(weighted=False)
 
-	parser.add_argument('--directed', dest='directed', action='store_true',
-	                    help='Graph is (un)directed. Default is undirected.')
-	parser.add_argument('--undirected', dest='undirected', action='store_false')
-	parser.set_defaults(directed=False)
+	args = parser.parse_args()
+	if args.task != "":
+		if args.input == "":
+			args.input = "graph/{}.edgelist".format(args.task)
+		if args.output == "":
+			args.output = "emb/{}__test.emb".format(args.task)
 
-	return parser.parse_args()
+	return args
 
 def read_graph():
 	'''
@@ -74,9 +82,7 @@ def read_graph():
 		G = nx.read_edgelist(args.input, nodetype=str, create_using=nx.DiGraph())
 		for edge in G.edges():
 			G[edge[0]][edge[1]]['weight'] = 1
-
-	if not args.directed:
-		G = G.to_undirected()
+	G = G.to_undirected()
 	return G
 
 def learn_embeddings(walks):
@@ -92,7 +98,10 @@ def main(args):
 	Pipeline for representational learning for all nodes in a graph.
 	'''
 	nx_G = read_graph()
-	G = node2vec.Graph(nx_G, args.directed, args.p, args.q)
+	print("Reading Done!")
+	G = node2vec.Graph(nx_G, args.p, args.q)
+	print("Creation Done!")
+	import pdb;pdb.set_trace()
 	G.preprocess_transition_probs()
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
