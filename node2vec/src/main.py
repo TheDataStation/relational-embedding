@@ -33,13 +33,13 @@ def parse_args():
 	parser.add_argument('--output', nargs='?', default='',
 	                    help='Embeddings path')
 
-	parser.add_argument('--dimensions', type=int, default=150,
+	parser.add_argument('--dimensions', type=int, default=100,
 	                    help='Number of dimensions. Default is 150.')
 
 	parser.add_argument('--walk-length', type=int, default=80,
 	                    help='Length of walk per source. Default is 80.')
 
-	parser.add_argument('--num-walks', type=int, default=10,
+	parser.add_argument('--num-walks', type=int, default=20,
 	                    help='Number of walks per source. Default is 10.')
 
 	parser.add_argument('--window-size', type=int, default=10,
@@ -101,7 +101,6 @@ def main(args):
 	print("Reading Done!")
 	G = node2vec.Graph(nx_G, args.p, args.q)
 	print("Creation Done!")
-	import pdb;pdb.set_trace()
 	G.preprocess_transition_probs()
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)

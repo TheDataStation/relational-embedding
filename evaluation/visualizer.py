@@ -36,7 +36,11 @@ def display_pca_scatterplot(path_to_model, task, words=None):
         twodim["type"] = pd.Series(words).apply(lambda x: convert_code_to_three_categories(x))
     if "node2vec" in path_to_model:
         twodim["type"] = pd.Series(words).apply(
-            lambda x: "row&col" if "row" in x or "col" in x else "else"
+            lambda x: "row&col" if "row" in x or "col" in x else convert_code_to_three_categories(x)
+        )
+    if "ProNE" in path_to_model:
+        twodim["type"] = pd.Series(words).apply(
+            lambda x: "row&col" if "row" in x or "col" in x else "other"
         )
 
     plt.figure(figsize=(15,15))
@@ -46,6 +50,7 @@ def display_pca_scatterplot(path_to_model, task, words=None):
 
 node2vec_embedding_storage = '../node2vec/emb/'
 word2vec_embedding_storage = '../word2vec/emb/'
+prone_embeeding_storage = '../ProNE/emb/'
 if __name__ == "__main__":
     # used embeddings from node2vec for testing purposes
     print("Visualizing results of specific tasks via PCA:")
@@ -60,7 +65,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     task = args.task
     all_n2v_emb_path = EU.all_files_in_path(node2vec_embedding_storage, task)
-    all_w2v_emb_path = EU.all_files_in_path(word2vec_embedding_storage, task)
-    for path_to_model in all_w2v_emb_path + all_n2v_emb_path:
+    all_w2v_emb_path = [] #EU.all_files_in_path(word2vec_embedding_storage, task)
+    all_prone_emb_path = EU.all_files_in_path(prone_embeeding_storage, task)
+
+    for path_to_model in all_w2v_emb_path + all_n2v_emb_path + all_prone_emb_path:
         print(path_to_model)
         display_pca_scatterplot(path_to_model, task)

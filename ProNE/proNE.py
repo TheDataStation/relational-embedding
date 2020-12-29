@@ -39,6 +39,7 @@ class ProNE():
 		l = matrix.shape[0]
 		smat = scipy.sparse.csc_matrix(matrix)  # convert to sparse CSC format
 		print('svd sparse', smat.data.shape[0] * 1.0 / l ** 2)
+		import pdb; pdb.set_trace()
 		U, Sigma, VT = randomized_svd(smat, n_components=self.dimension, n_iter=5, random_state=None)
 		U = U * np.sqrt(Sigma)
 		U = preprocessing.normalize(U, "l2")

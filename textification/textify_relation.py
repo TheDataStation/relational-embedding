@@ -63,6 +63,7 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 yield cell_value, c
 
 def quantize(df, excluding = [], hist = "width"):
+
     try:
         with open("../embedding_config.json", "r") as jsonfile:
             embeddding_config = json.load(jsonfile)
@@ -72,8 +73,12 @@ def quantize(df, excluding = [], hist = "width"):
 
     num_bins = embeddding_config["num_bins"]
 
+    # Not enough numerical values for binning
+    if df.shape[0] < 2 * num_bins:
+        return df 
+
     cols = df.columns
-    bin_percentile = 100 / num_bins
+    bin_percentile = 100.0 / num_bins
     for col in cols:
         if col in excluding:
             continue
@@ -84,7 +89,6 @@ def quantize(df, excluding = [], hist = "width"):
             bins = [np.percentile(df[col], i * bin_percentile) for i in range(num_bins)]
         else: 
             bins = [i * (df[col].max() - df[col].min()) / num_bins for i in range(num_bins)]
-        
         df[col] = np.digitize(df[col], bins)
     return df
 

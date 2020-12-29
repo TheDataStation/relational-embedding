@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     # Create X and Y
     Y = full_table[target_column]
-    X_train, X_test, y_train, y_test = train_test_split(trimmed_table, Y, test_size = test_size, random_state=1234)
+    X_train, X_test, y_train, y_test = train_test_split(trimmed_table, Y, test_size = 0.2, random_state=1234)
 
     # X_joined = df_joined.drop(["result"], axis = 1)
     # Y_joined = df_joined["result"].values.ravel()

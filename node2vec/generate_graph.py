@@ -63,7 +63,8 @@ def generate_graph(args):
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for row in decoded_row:
-                    row_name = path + "row:" + row
+                    filename = path.split("/")[-1][:-4]
+                    row_name = "row:" + row
                     edges.add((value, row_name))
     
         for cell_value, col in tr._read_columns_from_dataframe(df, columns, integer_strategy="stringify"):
@@ -84,7 +85,7 @@ def generate_graph(args):
             f.write(cc.get(node_x) + " " + cc.get(node_y) + "\n")
 
     nx.write_edgelist(graph, output)
-    cc.save(output + "dictionary.pickle")
+    cc.save(output + ".dictionary.pickle")
 
 if __name__ == "__main__":
     print("Generating graph for input")

@@ -2,5 +2,4 @@ networkx==1.11
 numpy==1.18.2
 gensim==3.8.3
 tqdm==4.47.0
-sentencepiece==0.1.85
 sklearn

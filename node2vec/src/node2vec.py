@@ -17,7 +17,7 @@ class Graph():
 
 		walk = [start_node]
 		for i in range(walk_length):
-			cur_nbrs = G.neighbors(walk[i])
+			cur_nbrs = [n for n in G.neighbors(walk[i])]
 			walk.append(random.choice(cur_nbrs))
 		return walk
 
