@@ -39,7 +39,7 @@ def parse_args():
 	parser.add_argument('--walk-length', type=int, default=80,
 	                    help='Length of walk per source. Default is 80.')
 
-	parser.add_argument('--num-walks', type=int, default=20,
+	parser.add_argument('--num-walks', type=int, default=10,
 	                    help='Number of walks per source. Default is 10.')
 
 	parser.add_argument('--window-size', type=int, default=10,
@@ -77,9 +77,9 @@ def read_graph():
 	'''
 	print("starting")
 	if args.weighted:
-		G = nx.read_edgelist(args.input, nodetype=str, data=(('weight',int),), create_using=nx.DiGraph())
+		G = nx.read_edgelist(args.input, nodetype=str, data=(('weight',int),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 	else:
-		G = nx.read_edgelist(args.input, nodetype=str, create_using=nx.DiGraph())
+		G = nx.read_edgelist(args.input, nodetype=str, create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 		for edge in G.edges():
 			G[edge[0]][edge[1]]['weight'] = 1
 	G = G.to_undirected()

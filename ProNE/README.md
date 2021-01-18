@@ -54,8 +54,7 @@ You can use `python proNE.py -graph example_graph` to train ProNE model on the e
 If you want to train on the PPI dataset, you can run 
 
 ```bash
-python proNE.py -graph data/PPI.ungraph -emb1 emb/PPI_sparse.emb -emb2 emb/PPI_spectral.emb
- -dimension 128 -step 10 -theta 0.5 -mu 0.2
+python proNE.py -graph data/PPI.ungraph -emb1 emb/PPI_sparse.emb -emb2 emb/PPI_spectral.emb -dimension 128 -step 10 -theta 0.5 -mu 0.2
 ```
 Where PPI_sparse.emb and PPI_spectral.emb are output embedding files and dimension=128, step=10, theta=0.5 and mu=0.2 are the default setting for a good result. Better results would be achieved when searching mu over values around 0, for example, the results when mu = -4.0 (low pass) on Wikipedia in the enhancement experiments are better than those reported in the paper.
 If you want to evaluate the embedding via node classification task, you can run

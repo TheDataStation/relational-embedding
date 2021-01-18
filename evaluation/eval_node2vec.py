@@ -11,8 +11,8 @@ import os
 import argparse
 import json 
 
-from keras.models import Sequential
-from keras import layers
+# from keras.models import Sequential
+# from keras import layers
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, train_test_split
@@ -66,6 +66,9 @@ def evaluate_task(args):
     location_processed = config["location_processed"]
     target_column = config["target_column"]
 
+    with open("../data/strategies/" + args.task + ".txt", "r") as jsonfile:
+        strategies = json.load(jsonfile)
+
     # Load data 
     trimmed_table = pd.read_csv(os.path.join("../", location_processed), sep=',', encoding='latin')
     full_table = pd.read_csv(os.path.join("../", location + target_file), sep=',', encoding='latin')
@@ -91,7 +94,7 @@ def evaluate_task(args):
         textification_strategy, integer_strategy = EU.parse_strategy(path)
 
         # Obtain textified & quantized data
-        df_textified = EU.textify_df(trimmed_table, textification_strategy, integer_strategy)
+        df_textified = EU.textify_df(trimmed_table, textification_strategy, strategies, location_processed)
         x_vec = pd.DataFrame(EU.vectorize_df(df_textified, model, model_type = "node2vec"))
         x_vec = x_vec.dropna(axis=1)
 
@@ -99,11 +102,11 @@ def evaluate_task(args):
         # remove_hubness_and_run(x_vec, Y)
         X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
         print("Evaluating model", path)
-        EU.remove_hubness_and_run(x_vec, Y)
+        # EU.remove_hubness_and_run(x_vec, Y)
 
-        for n_estimators in [10, 50]:
+        for n_estimators in [10, 50, 100]:
             classification_task(X_train, X_test, y_train, y_test, n_estimators=n_estimators)
-        classification_task_nn(args.task, X_train, X_test, y_train, y_test)
+        # classification_task_nn(args.task, X_train, X_test, y_train, y_test)
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")

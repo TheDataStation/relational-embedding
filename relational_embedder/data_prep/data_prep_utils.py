@@ -41,7 +41,7 @@ def lowercase_removepunct(token):
     token = str(token)
     token = token.lower()
     token = token.replace(',', ' ')
-    token = token.replace('.', ' ')
+    # token = token.replace('.', ' ')
     token = token.replace('  ', ' ')
     token = token.strip()
     return token

@@ -17,10 +17,12 @@ INTEGER_STRATEGY = ['skip', 'stringify', 'augment', "quantize"]
 TEXTIFICATION_GRAIN = ['cell', 'token']
 OUTPUT_FORMAT = ['sequence_text', 'windowed_text']
 
-def _read_rows_from_dataframe(df, columns, integer_strategy='skip'):
+def _read_rows_from_dataframe(df, columns, strategies):
     for index, el in df.iterrows():
         for c in columns:
+            integer_strategy = strategies[c]
             cell_value = el[c]
+
             if (cell_value == "\\N"):
                 continue
             # We check the cell value is valid before continuing
@@ -28,16 +30,13 @@ def _read_rows_from_dataframe(df, columns, integer_strategy='skip'):
                 continue
             # If strategy is skip, we check that first
             if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
-                if integer_strategy == 'skip':
-                    continue  # no numerical columns
-                elif integer_strategy == 'stringify':
-                    cell_value = str(el[c])
-                elif integer_strategy == 'augment':
-                    cell_value = str(c) + "_<#>_" + str(el[c])  # special symbol to tell apart augmentation from space
-            yield cell_value, index
+                cell_value = str(c) + "_<#>_" + str(el[c])  # special symbol to tell apart augmentation from space
+            yield cell_value, index, c
 
-def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
+def _read_columns_from_dataframe(df, columns, strategies):
     for c in columns:
+        integer_strategy = strategies[c]
+
         # If strategy is skip, we check that first
         if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
             if integer_strategy == 'skip':
@@ -62,7 +61,7 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                     continue
                 yield cell_value, c
 
-def quantize(df, excluding = [], hist = "width"):
+def quantize(df, strategies):
     try:
         with open("../embedding_config.json", "r") as jsonfile:
             embeddding_config = json.load(jsonfile)
@@ -71,24 +70,21 @@ def quantize(df, excluding = [], hist = "width"):
             embeddding_config = json.load(jsonfile)
 
     num_bins = embeddding_config["num_bins"]
-
     # Not enough numerical values for binning
     if df.shape[0] < 2 * num_bins:
         return df 
 
-    cols = df.columns
     bin_percentile = 100.0 / num_bins
-    for col in cols:
-        if col in excluding:
-            continue
+    for col in df.columns:
         if df[col].dtype not in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
             continue 
         
-        if hist == "width":
+        if strategies[col]["int"] == "eqw_quantize":
             bins = [np.percentile(df[col], i * bin_percentile) for i in range(num_bins)]
-        else: 
+            df[col] = np.digitize(df[col], bins)
+        if strategies[col]["int"] == "eqh_quantize":
             bins = [i * (df[col].max() - df[col].min()) / num_bins for i in range(num_bins)]
-        df[col] = np.digitize(df[col], bins)
+            df[col] = np.digitize(df[col], bins)
     return df
 
 def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=None, debug=False):

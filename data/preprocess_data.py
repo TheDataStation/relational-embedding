@@ -27,8 +27,8 @@ def task_loader(args):
 
     # Remove target column
     df = pd.read_csv(location_processed)
-    df.to_csv(location + target_file, index=False)
     if target_column in df.columns:
+        df.to_csv(location + target_file, index=False)
         df = df.drop(columns=[target_column])
     df.to_csv(location_processed, index=False)
 
@@ -42,11 +42,17 @@ def task_loader(args):
         strategies[table_name] = defaultdict(dict)
 
         for col in df.columns:
-            integer_strategy, grain_strategy = "stringfy", "cell"
+            integer_strategy, grain_strategy = "augment", "cell"
             num_distinct_numericals = df[col].nunique()
 
-            if df[col].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
-                if num_distinct_numericals > 0.5 * df.shape[0]:
+            if df[col].dtype in [np.float, np.float16, np.float32, np.float64]:
+                if abs(df[col].skew()) >= 2: 
+                    integer_strategy = "eqw_quantize"
+                else:
+                   integer_strategy = "eqh_quantize"
+            
+            if df[col].dtype in [np.int64, np.int32, np.int64, np.int]:
+                if df[col].max() - df[col].min() >= 5 * df[col].shape[0]:
                     if abs(df[col].skew()) >= 2: 
                         integer_strategy = "eqw_quantize"
                     else:

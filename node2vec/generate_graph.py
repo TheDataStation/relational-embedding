@@ -23,6 +23,12 @@ class Counter:
     def __init__(self):
         self.vocab = dict()
         self.cnt = 0
+
+    def check(self, token):
+        if token not in self.vocab: 
+            return None 
+        else:
+            return str(self.vocab[token])
     
     def get(self, token):
         if token not in self.vocab:
@@ -47,6 +53,9 @@ def generate_graph(args):
     output = "./graph/{}.edgelist".format(task)
     with open("../data/data_config.txt", "r") as jsonfile:
         data_config = json.load(jsonfile)
+    with open("../data/strategies/" + task + ".txt", "r") as jsonfile:
+        strategies = json.load(jsonfile)
+
     fs = all_files_in_path(data_config[task]["location"])
     total = len(fs)
     edges = set()
@@ -54,22 +63,23 @@ def generate_graph(args):
     current = 0 
     for path in tqdm(fs):
         df = pd.read_csv(path, encoding = 'latin1', sep=',', low_memory=False)
-        df = tr.quantize(df, excluding = ["eventid", "result"])
         table_name = path.split("/")[-1]
+        df = tr.quantize(df, strategies[table_name])
         columns = df.columns 
-
-        for cell_value, row in tr._read_rows_from_dataframe(df, columns, integer_strategy="stringify"):
-            decoded_row = dpu.encode_cell(row, grain="cell")
-            decoded_value = dpu.encode_cell(cell_value, grain="cell")
+        for cell_value, row, col in tr._read_rows_from_dataframe(df, columns, strategies[table_name]):
+            grain_strategy = strategies[table_name][col]["grain"]
+            decoded_row = dpu.encode_cell(row, grain=grain_strategy)
+            decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
             for value in decoded_value:
                 for row in decoded_row:
                     filename = table_name[:-4]
                     row_name = "row:" + row
-                    edges.add((value, row_name))
+                    edges.add((value, filename + row_name))
     
-        for cell_value, col in tr._read_columns_from_dataframe(df, columns, integer_strategy="stringify"):
-            decoded_col = dpu.encode_cell(col, grain="cell")
-            decoded_value = dpu.encode_cell(cell_value, grain="cell")
+        for cell_value, col in tr._read_columns_from_dataframe(df, columns, strategies[table_name]):
+            grain_strategy = strategies[table_name][col]["grain"]
+            decoded_col = dpu.encode_cell(col, grain=grain_strategy)
+            decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
             for value in decoded_value:
                 for col in decoded_col:
                     col_name = "col:" + col

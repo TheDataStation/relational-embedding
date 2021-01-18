@@ -46,43 +46,45 @@ def vectorize_df(df, model, model_type = "word2vec"):
     
     if model_type == "node2vec":
         for i in range(length):
-            x_vectorized[i] += list(model["row:" + str(i)])
+            # x_vectorized[i] += list(model["row:" + str(i)])
             row = df[i]
+            import pdb; pdb.set_trace()
             for j in range(len(row)):
                 if row[j] in model.vocab:
                     x_vectorized[i] += list(model[row[j]])
     
     if model_type == "proNE":
-        import pdb; pdb.set_trace()
         from node2vec.generate_graph import Counter
         cc = Counter()
-        cc.load("../node2vec/graph/financial.edgelistdictionary.pickle")
+        cc.load("../node2vec/graph/kraken.edgelist.dictionary.pickle")
         for i in range(length):
-            x_vectorized[i] += list(model[cc.get("row:" + str(i))])
+            # x_vectorized[i] += list(model[cc.check("row:" + str(i))])
             row = df[i]
             for j in range(len(row)):
-                if row[j] in model.vocab:
-                    x_vectorized[i] += list(model[row[j]])
+                if cc.check(row[j]) in model.vocab:
+                    x_vectorized[i] += list(model[cc.check(row[j])])
     return x_vectorized
 
 # Assume that textification strategy is skip (integer), row & col, sequence text
-def textify_df(df, ts = "row_and_col", integer_strategy = "quantize"):
-    df = quantize(df, excluding = ["event_id", "result"], num_bins=num_bins)
+def textify_df(df, ts, strategies, path):
+    table_name = path.split("/")[-1]
+    df = tr.quantize(df, strategies[table_name])
     columns = df.columns
     input = [[] for i in range(df.shape[0])]
+
     # Rows
     if ts == "row_and_col" or ts == "row":
-        for cell_value in tr._read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+        for cell_value, row, col in tr._read_rows_from_dataframe(df, columns, strategies[table_name]):
             values = dpu.encode_cell(cell_value, grain="cell")
             for cv in values:
                 # f.write(" " + cv)
-                input[cell_value[1]].append(cv)
+                input[row].append(cv)
 
     # Columns
     if ts == "row_and_col" or ts == "col":
         cnt = 0 
-        for cell_value in tr._read_columns_from_dataframe(df, columns, integer_strategy=integer_strategy):
-            values = dpu.encode_cell(cell_value, grain="cell")
+        for cell_value, col in tr._read_columns_from_dataframe(df, columns, strategies[table_name]):
+            values = dpu.encode_cell(cell_value, grain="cell") # todo fix this 
             for cv in values:
                 # f.write(" " + cv)
                 input[cnt].append(cv) 
@@ -91,7 +93,7 @@ def textify_df(df, ts = "row_and_col", integer_strategy = "quantize"):
     if ts == "alex": 
         cnt = 0
         offset = 0
-        for cell_value, c, index in tr.alex__read_rows_from_dataframe(df, columns, integer_strategy=integer_strategy):
+        for cell_value, c, index in tr.alex__read_rows_from_dataframe(df, columns, strategies[table_name]):
             values = dpu.encode_cell((cell_value, c), grain="cell")
             for cv in values:
                 input[cnt].append(cv)
