@@ -55,7 +55,7 @@ def generate_graph(args):
     for path in tqdm(fs):
         df = pd.read_csv(path, encoding = 'latin1', sep=',', low_memory=False)
         df = tr.quantize(df, excluding = ["eventid", "result"])
-        filename = path.split("/")[-1]
+        table_name = path.split("/")[-1]
         columns = df.columns 
 
         for cell_value, row in tr._read_rows_from_dataframe(df, columns, integer_strategy="stringify"):
@@ -63,7 +63,7 @@ def generate_graph(args):
             decoded_value = dpu.encode_cell(cell_value, grain="cell")
             for value in decoded_value:
                 for row in decoded_row:
-                    filename = path.split("/")[-1][:-4]
+                    filename = table_name[:-4]
                     row_name = "row:" + row
                     edges.add((value, row_name))
     

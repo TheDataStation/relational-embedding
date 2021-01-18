@@ -63,7 +63,6 @@ def _read_columns_from_dataframe(df, columns, integer_strategy='skip'):
                 yield cell_value, c
 
 def quantize(df, excluding = [], hist = "width"):
-
     try:
         with open("../embedding_config.json", "r") as jsonfile:
             embeddding_config = json.load(jsonfile)
@@ -315,154 +314,9 @@ def serialize_column(paths, output_file, integer_strategy=None, grain=None, debu
                         f.write(" " + cv)
 
 
-def window_row(paths, output_file, integer_strategy=None, grain=None, debug=False):
-    try:
-        os.remove(output_file)
-    except FileNotFoundError:
-        print("Creating new file for writing data")
-
-    total = len(paths)
-    current = 0
-    for path in tqdm(paths):
-        if debug:
-            print(str(current) + "/" + str(total))
-            current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=',')
-        # Check for valid relations only
-        if not dpu.valid_relation(df):
-            continue
-        columns = df.columns
-        f = csv.writer(open(output_file, 'a'), delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-        # Rows
-        for index, el in df.iterrows():
-            row = []
-            for c in columns:
-                if integer_strategy == 'skip':
-                    if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32,
-                                       np.float64]:
-                        continue  # no numerical columns
-                cell_value = el[c]
-                if not dpu.valid_cell(cell_value):
-                    continue
-                elif integer_strategy == 'stringify':
-                    cell_value = str(cell_value)
-                elif integer_strategy == 'augment':
-                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    row.append(cv)
-            if len(row) > 0:
-                f.writerow(row)
-        # TODO: why is it necessary to indicate end of relation?
-        f.writerow(["~R!RR*~"])
-
-
-def window_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
-    try:
-        os.remove(output_file)
-    except FileNotFoundError:
-        print("Creating new file for writing data")
-
-    total = len(paths)
-    current = 0
-    for path in tqdm(paths):
-        if debug:
-            print(str(current) + "/" + str(total))
-            current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=',')
-        # Check for valid relations only
-        if not dpu.valid_relation(df):
-            continue
-        columns = df.columns
-        f = csv.writer(open(output_file, 'a'), delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-        # Columns
-        for c in columns:
-            if integer_strategy == 'skip':
-                if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
-                    continue  # no numerical columns
-            col_data = df[c]
-            row = []
-            for cell_value in col_data:
-                if not dpu.valid_cell(cell_value):
-                    continue
-                elif integer_strategy == 'stringify':
-                    cell_value = str(cell_value)
-                elif integer_strategy == 'augment':
-                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    row.append(cv)
-            if len(row) > 0:
-                f.writerow(row)
-        # TODO: why is it necessary to indicate end of relation?
-        f.writerow(["~R!RR*~"])
-
-
-def window_row_and_column(paths, output_file, integer_strategy=None, grain=None, debug=False):
-    try:
-        os.remove(output_file)
-    except FileNotFoundError:
-        print("Creating new file for writing data")
-
-    total = len(paths)
-    current = 0
-    for path in tqdm(paths):
-        if debug:
-            print(str(current) + "/" + str(total))
-            current += 1
-        df = pd.read_csv(path, encoding='latin1', sep=',')
-        # Check for valid relations only
-        if not dpu.valid_relation(df):
-            continue
-        columns = df.columns
-        f = csv.writer(open(output_file, 'a'), delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-        # Rows
-        for index, el in df.iterrows():
-            row = []
-            for c in columns:
-                if integer_strategy == 'skip':
-                    if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32,
-                                       np.float64]:
-                        continue  # no numerical columns
-                cell_value = el[c]
-                if not dpu.valid_cell(cell_value):
-                    continue
-                elif integer_strategy == 'stringify':
-                    cell_value = str(cell_value)
-                elif integer_strategy == 'augment':
-                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    row.append(cv)
-            if len(row) > 0:
-                f.writerow(row)
-        # Columns
-        for c in columns:
-            if integer_strategy == 'skip':
-                if df[c].dtype in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
-                    continue  # no numerical columns
-            col_data = df[c]
-            row = []
-            for cell_value in col_data:
-                if not dpu.valid_cell(cell_value):
-                    continue
-                elif integer_strategy == 'stringify':
-                    cell_value = str(cell_value)
-                elif integer_strategy == 'augment':
-                    cell_value = str(c) + "_<#>_" + str(cell_value)  # special symbol to distinguish augmentation
-                values = dpu.encode_cell(cell_value, grain=grain)
-                for cv in values:
-                    row.append(cv)
-            if len(row) > 0:
-                f.writerow(row)
-        # TODO: why is it necessary to indicate end of relation?
-        f.writerow(["~R!RR*~"])
-
-
 def all_files_in_path(path):
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv"]
     return fs
-
 
 def main(args):
     path = args.dataset
@@ -482,15 +336,6 @@ def main(args):
             serialize_row_and_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
         elif relation_strategy == "alex":
             alex__serialize_row_col(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
-        else:
-            print("Mode not supported. <row, col, row_and_col>")
-    elif output_format == 'windowed_text':
-        if relation_strategy == "row":
-            window_row(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
-        elif relation_strategy == "col":
-            window_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
-        elif relation_strategy == "row_and_col":
-            window_row_and_column(fs, output, integer_strategy=integer_strategy, grain=grain, debug=debug)
         else:
             print("Mode not supported. <row, col, row_and_col>")
         
