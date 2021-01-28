@@ -48,7 +48,7 @@ def vectorize_df(df, model, model_type = "word2vec"):
         for i in range(length):
             # x_vectorized[i] += list(model["row:" + str(i)])
             row = df[i]
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             for j in range(len(row)):
                 if row[j] in model.vocab:
                     x_vectorized[i] += list(model[row[j]])
@@ -75,32 +75,38 @@ def textify_df(df, ts, strategies, path):
     # Rows
     if ts == "row_and_col" or ts == "row":
         for cell_value, row, col in tr._read_rows_from_dataframe(df, columns, strategies[table_name]):
-            values = dpu.encode_cell(cell_value, grain="cell")
-            for cv in values:
-                # f.write(" " + cv)
-                input[row].append(cv)
+            grain_strategy = strategies[table_name][col]["grain"]
+            decoded_row = dpu.encode_cell(row, grain=grain_strategy)
+            # decoded_value = dpu.encode_cell(cell_value, grain="cell")
+            # for cv in decoded_value:
+            #     # f.write(" " + cv)
+            #     input[row].append(cv)
+            
+            filename = table_name[:-4]
+            row_name = "row:" + decoded_row[0]
+            input[row].append(filename + row_name)
 
-    # Columns
-    if ts == "row_and_col" or ts == "col":
-        cnt = 0 
-        for cell_value, col in tr._read_columns_from_dataframe(df, columns, strategies[table_name]):
-            values = dpu.encode_cell(cell_value, grain="cell") # todo fix this 
-            for cv in values:
-                # f.write(" " + cv)
-                input[cnt].append(cv) 
-                cnt = (cnt + 1) % df.shape[0]
+    # # Columns
+    # if ts == "row_and_col" or ts == "col":
+    #     cnt = 0 
+    #     for cell_value, col in tr._read_columns_from_dataframe(df, columns, strategies[table_name]):
+    #         values = dpu.encode_cell(cell_value, grain="cell") # todo fix this 
+    #         for cv in values:
+    #             # f.write(" " + cv)
+    #             input[cnt].append(cv) 
+    #             cnt = (cnt + 1) % df.shape[0]
     
-    if ts == "alex": 
-        cnt = 0
-        offset = 0
-        for cell_value, c, index in tr.alex__read_rows_from_dataframe(df, columns, strategies[table_name]):
-            values = dpu.encode_cell((cell_value, c), grain="cell")
-            for cv in values:
-                input[cnt].append(cv)
-                offset += 1 
-                if offset >= df.shape[1]: 
-                    offset = 0
-                    cnt += 1
+    # if ts == "alex": 
+    #     cnt = 0
+    #     offset = 0
+    #     for cell_value, c, index in tr.alex__read_rows_from_dataframe(df, columns, strategies[table_name]):
+    #         values = dpu.encode_cell((cell_value, c), grain="cell")
+    #         for cv in values:
+    #             input[cnt].append(cv)
+    #             offset += 1 
+    #             if offset >= df.shape[1]: 
+    #                 offset = 0
+    #                 cnt += 1
     return input
 
 def measure_quality(ground_truth, predicted_truth):
@@ -147,7 +153,7 @@ def remove_hubness_and_run(X, y, n_neighbors=15):
 
 def parse_strategy(s):
     integer_strategy = "quantize"
-    textification_strategy = "row"
+    textification_strategy = "row_and_col"
 
     if s.find("alex") != -1:
         textification_strategy = "alex"

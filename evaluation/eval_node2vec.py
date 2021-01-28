@@ -15,6 +15,7 @@ import json
 # from keras import layers
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score
 import tensorflow as tf
@@ -28,15 +29,23 @@ test_size = embeddding_config["test_size"]
 
 def classification_task(X_train, X_test, y_train, y_test, n_estimators=100):
     rf = RandomForestClassifier(n_estimators = n_estimators)
+    logr = LogisticRegression(penalty='l2', solver='liblinear')
+
     rf.fit(X_train, y_train)
-    y_pred = rf.predict(X_test)
-    pscore = accuracy_score(y_test, y_pred)
-    print("RF Test score: {}, n. estimator: {}".format(pscore, n_estimators))
+    logr.fit(X_train, y_train)
+    def show_stats(model):
+        pscore_train = accuracy_score(y_train, model.predict(X_train))
+        pscore_test = accuracy_score(y_test, model.predict(X_test))
+        print("Train accuracy {}, Test accuracy {}".format(pscore_train, pscore_test))
+    show_stats(rf)
+    show_stats(logr)
+
+
 
 def classification_task_nn(task, X_train, X_test, y_train, y_test): 
     input_size = X_train.shape[1]
     model = tf.keras.Sequential([
-        layers.Flatten(input_shape = (input_size,)),
+        tf.keras.layers.Flatten(input_shape = (input_size,)),
         tf.keras.layers.Dense(128, activation='sigmoid'),
         tf.keras.layers.Dense(64, activation='sigmoid'),
         tf.keras.layers.Dense(64, activation='sigmoid'),
@@ -74,10 +83,8 @@ def evaluate_task(args):
     full_table = pd.read_csv(os.path.join("../", location + target_file), sep=',', encoding='latin')
     Y = full_table[target_column]
 
-    if args.task == "kraken":
-        Y = Y.apply(lambda x: x == "nofail")
-    if args.task == "financial":
-        Y = Y.apply(lambda x: ord(x) - ord('A'))
+    if args.task in ["kraken", "financial", "genes"]:
+        Y = pd.Categorical(Y).codes
     if args.task == "sample":
         Y = Y.apply(lambda x: int(x / 200))
 
@@ -95,12 +102,14 @@ def evaluate_task(args):
 
         # Obtain textified & quantized data
         df_textified = EU.textify_df(trimmed_table, textification_strategy, strategies, location_processed)
+        import pdb; pdb.set_trace()
         x_vec = pd.DataFrame(EU.vectorize_df(df_textified, model, model_type = "node2vec"))
+        import pdb; pdb.set_trace()
         x_vec = x_vec.dropna(axis=1)
 
         # Train a Random Forest classifier
         # remove_hubness_and_run(x_vec, Y)
-        X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = test_size, random_state=10)
+        X_train, X_test, y_train, y_test = train_test_split(x_vec, Y, test_size = 0.1, random_state=10)
         print("Evaluating model", path)
         # EU.remove_hubness_and_run(x_vec, Y)
 

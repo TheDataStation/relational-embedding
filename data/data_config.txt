@@ -28,7 +28,15 @@
         "target_file": "base_processed.csv",
         "target_column": "money",
         "name": "sample",
-        "task_type": "regression",
+        "task_type": "classification",
         "location_processed": "./data/sample/base.csv"
+    },
+    "genes": {
+        "location": "./data/genes/",
+        "target_file": "base_processed.csv",
+        "target_column": "Localization",
+        "name": "genes",
+        "task_type": "classification",
+        "location_processed": "./data/genes/Classification.csv"
     }
 }
