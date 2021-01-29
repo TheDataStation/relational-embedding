@@ -1,4 +1,4 @@
 {
-    "num_bins": 100,
+    "num_bins": 50,
     "test_size": 0.2
 }

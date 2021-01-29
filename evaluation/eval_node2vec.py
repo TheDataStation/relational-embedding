@@ -28,12 +28,21 @@ with open("../embedding_config.json", "r") as jsonfile:
 num_bins = embeddding_config["num_bins"]
 test_size = embeddding_config["test_size"]
 
-
-def classification_task(X_train, X_test, y_train, y_test, n_estimators=100):
+def classification_task_rf(X_train, X_test, y_train, y_test, n_estimators=100):
     rf = RandomForestClassifier(n_estimators=n_estimators)
-    logr = LogisticRegression(penalty='l2', solver='liblinear')
-
     rf.fit(X_train, y_train)
+
+    def show_stats(model):
+        pscore_train = accuracy_score(y_train, model.predict(X_train))
+        pscore_test = accuracy_score(y_test, model.predict(X_test))
+        print("Train accuracy {}, Test accuracy {}".format(
+            pscore_train, pscore_test))
+        return pscore_train, pscore_test
+
+    return show_stats(rf)
+    
+def classification_task_logr(X_train, X_test, y_train, y_test, n_estimators=100):
+    logr = LogisticRegression(penalty='l2', solver='liblinear')
     logr.fit(X_train, y_train)
 
     def show_stats(model):
@@ -41,9 +50,9 @@ def classification_task(X_train, X_test, y_train, y_test, n_estimators=100):
         pscore_test = accuracy_score(y_test, model.predict(X_test))
         print("Train accuracy {}, Test accuracy {}".format(
             pscore_train, pscore_test))
+        return pscore_train, pscore_test
 
-    show_stats(rf)
-    show_stats(logr)
+    return show_stats(logr)
 
 
 def classification_task_nn(task, X_train, X_test, y_train, y_test):
@@ -84,12 +93,10 @@ def evaluate_task(args):
         "../", location_processed), sep=',', encoding='latin')
     full_table = pd.read_csv(os.path.join(
         "../", location + target_file), sep=',', encoding='latin')
-    Y = full_table[target_column]
 
+    Y = full_table[target_column]
     if args.task in ["kraken", "financial", "genes"]:
         Y = pd.Categorical(Y).codes
-    if args.task == "sample":
-        Y = Y.apply(lambda x: int(x / 200))
 
     # Set embeddings that are to be evaluated
     method = args.method
@@ -101,24 +108,43 @@ def evaluate_task(args):
         model = KeyedVectors.load_word2vec_format(path)
         table_name = path.split("/")[-1][:-4]
         model_dict_path = "../graph/{}/{}.dict".format(args.task, table_name)
+        print(model_dict_path)
 
         # Obtain textified & quantized data
-        df_textified = EU.textify_df(
-            trimmed_table, strategies, location_processed)
-        x_vec = pd.DataFrame(EU.vectorize_df(
-            df_textified, model, model_dict=model_dict_path, model_type=method))
-        x_vec = x_vec.dropna(axis=1)
-
-        # Train a Random Forest classifier
-        # remove_hubness_and_run(x_vec, Y)
-        X_train, X_test, y_train, y_test = train_test_split(
-            x_vec, Y, test_size=0.1, random_state=10)
-        print("Evaluating model", path)
-        # EU.remove_hubness_and_run(x_vec, Y)
-
-        for n_estimators in [10, 50, 100]:
-            classification_task(X_train, X_test, y_train,
-                                y_test, n_estimators=n_estimators)
+        training_loss = [] 
+        testing_loss = [] 
+        for i in range(0, 100, 10):
+            df_textified = EU.textify_df(
+                trimmed_table, strategies, location_processed)
+            x_vec = pd.DataFrame(
+                EU.vectorize_df(
+                    df_textified, model, model.vocab,
+                    model_dict=model_dict_path, model_type=method
+                )
+            )
+            model_2dim = EU.get_PCA_for_embedding(model)
+            x_vec_2dim = pd.DataFrame(
+                EU.vectorize_df(
+                    df_textified, model_2dim, model.vocab,
+                    model_dict=model_dict_path, model_type=method
+                )
+            )
+            
+            # Train a Random Forest classifier
+            tests = train_test_split(x_vec, Y, test_size=0.1, random_state=10)
+            train_loss, test_loss = classification_task_logr(*tests)
+            training_loss.append(train_loss)
+            testing_loss.append(test_loss)
+        print(training_loss)
+        print(testing_loss)
+        # tests_2dim = train_test_split(x_vec_2dim, Y, test_size=test_size, random_state=10)
+        # print("{}_dim:".format(model.vector_size))
+        # for n_estimators in [10, 50, 100]:
+        #     classification_task(*tests, n_estimators=n_estimators)
+        # print("2_dim:")
+        # for n_estimators in [10, 50, 100]:
+        #     classification_task(*tests_2dim, n_estimators=n_estimators)
+            
         # classification_task_nn(args.task, X_train, X_test, y_train, y_test)
 
 
