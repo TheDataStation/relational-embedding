@@ -1,5 +1,6 @@
-import csv
 import sys
+sys.path.append('..')
+import csv
 import pandas as pd
 import numpy as np 
 from relational_embedder.data_prep import data_prep_utils as dpu
@@ -17,48 +18,21 @@ def all_files_in_path(path, task):
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f.find(task) != -1]
     return fs
 
-def quantize(df, excluding = [], hist = "width", num_bins = num_bins):
-    cols = df.columns
-    bin_percentile = 100 / num_bins
-    for col in cols:
-        if col in excluding:
-            continue
-        if df[col].dtype not in [np.int64, np.int32, np.int64, np.float, np.int, np.float16, np.float32, np.float64]:
-            continue 
-        
-        if hist == "width":
-            bins = [np.percentile(df[col], i * bin_percentile) for i in range(num_bins)]
-        else: 
-            bins = [i * (df[col].max() - df[col].min()) / num_bins for i in range(num_bins)]
-        
-        df[col] = np.digitize(df[col], bins)
-    return df
-
-def vectorize_df(df, model, model_type = "word2vec"):
+def vectorize_df(df, model, model_dict = None, model_type = "word2vec"):
     length = len(df)
     x_vectorized = [[] for i in range(length)]
-    if model_type == "word2vec":
-        for i in range(length):
-            row = df[i]
-            for j in range(len(row)):
-                if row[j] in model.vocab:
-                    x_vectorized[i] += list(model[row[j]])
+    # if model_type == "word2vec":
+    #     for i in range(length):
+    #         row = df[i]
+    #         for j in range(len(row)):
+    #             if row[j] in model.vocab:
+    #                 x_vectorized[i] += list(model[row[j]])
     
-    if model_type == "node2vec":
+    if model_type == "node2vec" or model_type == "ProNE":
+        from token_dict import TokenDict
+        cc = TokenDict()
+        cc.load(model_dict)
         for i in range(length):
-            # x_vectorized[i] += list(model["row:" + str(i)])
-            row = df[i]
-            # import pdb; pdb.set_trace()
-            for j in range(len(row)):
-                if row[j] in model.vocab:
-                    x_vectorized[i] += list(model[row[j]])
-    
-    if model_type == "proNE":
-        from node2vec.generate_graph import Counter
-        cc = Counter()
-        cc.load("../node2vec/graph/kraken.edgelist.dictionary.pickle")
-        for i in range(length):
-            # x_vectorized[i] += list(model[cc.check("row:" + str(i))])
             row = df[i]
             for j in range(len(row)):
                 if cc.check(row[j]) in model.vocab:
@@ -66,47 +40,23 @@ def vectorize_df(df, model, model_type = "word2vec"):
     return x_vectorized
 
 # Assume that textification strategy is skip (integer), row & col, sequence text
-def textify_df(df, ts, strategies, path):
+def textify_df(df, strategies, path):
     table_name = path.split("/")[-1]
     df = tr.quantize(df, strategies[table_name])
     columns = df.columns
     input = [[] for i in range(df.shape[0])]
 
-    # Rows
-    if ts == "row_and_col" or ts == "row":
-        for cell_value, row, col in tr._read_rows_from_dataframe(df, columns, strategies[table_name]):
-            grain_strategy = strategies[table_name][col]["grain"]
-            decoded_row = dpu.encode_cell(row, grain=grain_strategy)
-            # decoded_value = dpu.encode_cell(cell_value, grain="cell")
-            # for cv in decoded_value:
-            #     # f.write(" " + cv)
-            #     input[row].append(cv)
-            
-            filename = table_name[:-4]
-            row_name = "row:" + decoded_row[0]
-            input[row].append(filename + row_name)
-
-    # # Columns
-    # if ts == "row_and_col" or ts == "col":
-    #     cnt = 0 
-    #     for cell_value, col in tr._read_columns_from_dataframe(df, columns, strategies[table_name]):
-    #         values = dpu.encode_cell(cell_value, grain="cell") # todo fix this 
-    #         for cv in values:
-    #             # f.write(" " + cv)
-    #             input[cnt].append(cv) 
-    #             cnt = (cnt + 1) % df.shape[0]
+    for cell_value, row, col in tr._read_rows_from_dataframe(df, columns, strategies[table_name]):
+        grain_strategy = strategies[table_name][col]["grain"]
+        decoded_row = dpu.encode_cell(row, grain=grain_strategy)
+        decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
+        for value in decoded_value:
+            input[row].append(value)
     
-    # if ts == "alex": 
-    #     cnt = 0
-    #     offset = 0
-    #     for cell_value, c, index in tr.alex__read_rows_from_dataframe(df, columns, strategies[table_name]):
-    #         values = dpu.encode_cell((cell_value, c), grain="cell")
-    #         for cv in values:
-    #             input[cnt].append(cv)
-    #             offset += 1 
-    #             if offset >= df.shape[1]: 
-    #                 offset = 0
-    #                 cnt += 1
+    filename = "".join(table_name.split(".")[:-1])
+    for row in range(df.shape[0]):
+        row_name = "{}_row:{}".format(filename, str(row))
+        input[row].append(row_name)
     return input
 
 def measure_quality(ground_truth, predicted_truth):

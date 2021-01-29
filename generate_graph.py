@@ -12,7 +12,7 @@ from token_dict import TokenDict
 
 def generate_graph(args):
     task = args.task
-    suffix = "" if args.output_suffix == "" else "_" + args.output_suffix
+    suffix = "" if args.suffix == "" else "_" + args.suffix
     output_graph_path = "./graph/{}/{}{}.edgelist".format(task, task, suffix)
     output_dictionary_path = "./graph/{}/{}{}.dict".format(task, task, suffix)
     data_strategy_path = "./data/strategies/{}.txt".format(task)
@@ -22,7 +22,7 @@ def generate_graph(args):
     with open(data_strategy_path, "r") as jsonfile:
         strategies = json.load(jsonfile)
 
-    fs = utils.all_files_in_path(data_config["location"])
+    fs = utils.all_data_files_in_path(data_config["location"])
     edges = set()
 
     current = 0
@@ -74,7 +74,7 @@ if __name__ == "__main__":
                         help='task to generate relation from'
                         )
 
-    parser.add_argument('--output_suffix',
+    parser.add_argument('--suffix',
                         type=str,
                         default='',  
                         help='a suffix to identify'

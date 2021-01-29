@@ -1,11 +1,11 @@
 '''
-Reference implementation of node2vec. 
+Reference implementation of node2vec.
 
 Author: Aditya Grover
 
 For more details, refer to the paper:
 node2vec: Scalable Feature Learning for Networks
-Aditya Grover and Jure Leskovec 
+Aditya Grover and Jure Leskovec
 Knowledge Discovery and Data Mining (KDD), 2016
 '''
 
@@ -15,20 +15,25 @@ import networkx as nx
 import node2vec
 from gensim.models import Word2Vec
 
+
 def parse_args():
 	'''
 	Parses the node2vec arguments.
 	'''
 	parser = argparse.ArgumentParser(description="Run node2vec.")
 
-	parser.add_argument('--task', 
-		type=str, 
-		default="",
+	parser.add_argument('--task',
+		type=str,
+		default="sample",
+		required=True,
 		help="task to generate embedding from"
     )
 
+	parser.add_argument('--suffix', nargs='?', default='',
+	                    help='A suffix of the experiment')
+
 	parser.add_argument('--input', nargs='?', default='',
-	                    help='Input graph path')
+	                    help='Graph path')
 
 	parser.add_argument('--output', nargs='?', default='',
 	                    help='Embeddings path')
@@ -45,7 +50,7 @@ def parse_args():
 	parser.add_argument('--window-size', type=int, default=10,
                     	help='Context size for optimization. Default is 10.')
 
-	parser.add_argument('--iter', default=10, type=int,
+	parser.add_argument('--iter', default=5, type=int,
                       help='Number of epochs in SGD')
 
 	parser.add_argument('--workers', type=int, default=8,
@@ -63,12 +68,10 @@ def parse_args():
 	parser.set_defaults(weighted=False)
 
 	args = parser.parse_args()
-	if args.task != "":
-		if args.input == "":
-			args.input = "graph/{}.edgelist".format(args.task)
-		if args.output == "":
-			args.output = "emb/{}__test.emb".format(args.task)
 
+	file_name = args.task if args.suffix == "" else "{}_{}".format(args.task, args.suffix)
+	args.input = "../graph/{}/{}.edgelist".format(args.task, file_name)
+	args.output = "./emb/{}.emb".format(file_name)
 	return args
 
 def read_graph():
