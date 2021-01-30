@@ -9,6 +9,7 @@ from textification import textify_relation as tr
 from os.path import isfile, join
 from os import listdir
 import json
+from sklearn.metrics import accuracy_score
 
 with open("../embedding_config.json", "r") as jsonfile:
     embeddding_config = json.load(jsonfile)
@@ -48,7 +49,7 @@ def vectorize_df(df, model, model_vocab=None, model_dict=None, model_type="word2
             for j in range(len(row)):
                 if cc.check(row[j]) in model_vocab:
                     x_vectorized[i] += list(model[cc.check(row[j])])
-    return x_vectorized
+    return pd.DataFrame(x_vectorized)
 
 def textify_df(df, strategies, path):
     table_name = path.split("/")[-1]
@@ -70,49 +71,49 @@ def textify_df(df, strategies, path):
     return input
 
 
-def measure_quality(ground_truth, predicted_truth):
-    precision = []
-    for i in range(len(ground_truth)):
-        flag = ground_truth[i] in predicted_truth[i]
-        precision.append(flag)
-    return precision
+# def measure_quality(ground_truth, predicted_truth):
+#     precision = []
+#     for i in range(len(ground_truth)):
+#         flag = ground_truth[i] in predicted_truth[i]
+#         precision.append(flag)
+#     return precision
 
 
-def remove_hubness_and_run(X, y, n_neighbors=15):
-    from skhubness import Hubness
-    from sklearn.model_selection import cross_val_score
-    from skhubness.neighbors import KNeighborsClassifier
+# def remove_hubness_and_run(X, y, n_neighbors=15):
+#     from skhubness import Hubness
+#     from sklearn.model_selection import cross_val_score
+#     from skhubness.neighbors import KNeighborsClassifier
 
-    # Measure Hubness before and after removal (method mutual proximity)
-    hub = Hubness(k=10, metric='cosine')
-    hub.fit(X)
-    k_skew = hub.score()
-    print(f'Skewness = {k_skew:.3f}')
+#     # Measure Hubness before and after removal (method mutual proximity)
+#     hub = Hubness(k=10, metric='cosine')
+#     hub.fit(X)
+#     k_skew = hub.score()
+#     print(f'Skewness = {k_skew:.3f}')
 
-    hub_mp = Hubness(k=10, metric='cosine',
-                     hubness='mutual_proximity')
-    hub_mp.fit(X)
-    k_skew_mp = hub_mp.score()
-    print(f'Skewness after MP: {k_skew_mp:.3f} '
-          f'(reduction of {k_skew - k_skew_mp:.3f})')
-    print(f'Robin hood: {hub_mp.robinhood_index:.3f} '
-          f'(reduction of {hub.robinhood_index - hub_mp.robinhood_index:.3f})')
+#     hub_mp = Hubness(k=10, metric='cosine',
+#                      hubness='mutual_proximity')
+#     hub_mp.fit(X)
+#     k_skew_mp = hub_mp.score()
+#     print(f'Skewness after MP: {k_skew_mp:.3f} '
+#           f'(reduction of {k_skew - k_skew_mp:.3f})')
+#     print(f'Robin hood: {hub_mp.robinhood_index:.3f} '
+#           f'(reduction of {hub.robinhood_index - hub_mp.robinhood_index:.3f})')
 
-    # Measure Classfication Accuracy before and after removal
-    # vanilla kNN
-    knn_standard = KNeighborsClassifier(
-        n_neighbors=n_neighbors, metric='cosine')
-    acc_standard = cross_val_score(knn_standard, X, y, cv=10)
+#     # Measure Classfication Accuracy before and after removal
+#     # vanilla kNN
+#     knn_standard = KNeighborsClassifier(
+#         n_neighbors=n_neighbors, metric='cosine')
+#     acc_standard = cross_val_score(knn_standard, X, y, cv=10)
 
-    # kNN with hubness reduction (mutual proximity)
-    knn_mp = KNeighborsClassifier(n_neighbors=n_neighbors,
-                                  metric='cosine',
-                                  hubness='mutual_proximity')
-    acc_mp = cross_val_score(knn_mp, X, y, cv=10)
+#     # kNN with hubness reduction (mutual proximity)
+#     knn_mp = KNeighborsClassifier(n_neighbors=n_neighbors,
+#                                   metric='cosine',
+#                                   hubness='mutual_proximity')
+#     acc_mp = cross_val_score(knn_mp, X, y, cv=10)
 
-    print(f'Accuracy (vanilla kNN): {acc_standard.mean():.3f}')
-    print(f'Accuracy (kNN with hubness reduction): {acc_mp.mean():.3f}')
-    return (acc_standard.mean(), acc_mp.mean())
+#     print(f'Accuracy (vanilla kNN): {acc_standard.mean():.3f}')
+#     print(f'Accuracy (kNN with hubness reduction): {acc_mp.mean():.3f}')
+#     return (acc_standard.mean(), acc_mp.mean())
 
 
 def parse_strategy(s):
@@ -134,3 +135,53 @@ def parse_strategy(s):
         integer_strategy = "stringify"
 
     return textification_strategy, integer_strategy
+
+###################################################################
+#   More evaluation modules 
+#
+###################################################################
+
+def show_stats(model, X_train, X_test, y_train, y_test, argmax = False):
+    X_pred_train = model.predict(X_train)
+    X_pred_test = model.predict(X_test)
+    if argmax == True: 
+        X_pred_train = np.argmax(X_pred_train, axis = 1)
+        X_pred_test = np.argmax(X_pred_test, axis = 1)
+    pscore_train = accuracy_score(y_train, X_pred_train)
+    pscore_test = accuracy_score(y_test, X_pred_test)
+    print("Train accuracy {}, Test accuracy {}".format(
+        pscore_train, pscore_test))
+    return pscore_train, pscore_test
+
+
+def classification_task_rf(X_train, X_test, y_train, y_test, n_estimators=100):
+    from sklearn.ensemble import RandomForestClassifier
+    model = RandomForestClassifier(n_estimators=n_estimators)
+    model.fit(X_train, y_train)
+    return show_stats(model, X_train, X_test, y_train, y_test)
+    
+def classification_task_logr(X_train, X_test, y_train, y_test, n_estimators=100):
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import accuracy_score
+    model = LogisticRegression(penalty='l2', solver='liblinear')
+    model.fit(X_train, y_train)
+    return show_stats(model, X_train, X_test, y_train, y_test)
+
+
+def classification_task_nn(X_train, X_test, y_train, y_test):
+    import tensorflow as tf
+    input_size = X_train.shape[1]
+    ncategories = np.max(y_train) + 1
+    model = tf.keras.Sequential([
+        tf.keras.layers.Flatten(input_shape=(input_size,)),
+        tf.keras.layers.Dense(128, activation=tf.nn.sigmoid),
+        tf.keras.layers.Dense(ncategories, activation=tf.nn.softmax)
+    ])
+
+    model.compile(optimizer='adam',
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+    
+    model.fit(X_train, y_train, epochs=500, verbose = 0)
+    results = model.evaluate(X_test, y_test, verbose = 2)
+    return show_stats(model, X_train, X_test, y_train, y_test, argmax = True)

@@ -1,3 +1,5 @@
+import pickle
+
 class TokenDict:
     def __init__(self):
         self.vocab = dict()
@@ -16,13 +18,11 @@ class TokenDict:
         return str(self.vocab[token])
 
     def save(self, output_path):
-        import pickle
         f = open(output_path, "wb")
         pickle.dump(self.vocab, f)
         f.close()
 
     def load(self, input_path):
-        import pickle
         f = open(input_path, "rb")
         self.vocab = pickle.load(f)
         self.cnt = len(self.vocab) - 1
