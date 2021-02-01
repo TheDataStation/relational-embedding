@@ -13,8 +13,9 @@ from token_dict import TokenDict
 def generate_graph(args):
     task = args.task
     suffix = "" if args.suffix == "" else "_" + args.suffix
-    output_graph_path = "./graph/{}/{}{}.edgelist".format(task, task, suffix)
-    output_dictionary_path = "./graph/{}/{}{}.dict".format(task, task, suffix)
+    output_graph_path = "./financial_big{}.txt"
+    # output_graph_path = "./graph/{}/{}{}.edgelist".format(task, task, suffix)
+    # output_dictionary_path = "./graph/{}/{}{}.dict".format(task, task, suffix)
     data_strategy_path = "./data/strategies/{}.txt".format(task)
     data_config_path = "./data/data_config.txt"
     with open(data_config_path, "r") as jsonfile:
@@ -42,7 +43,7 @@ def generate_graph(args):
             for value in decoded_value:
                 for row in decoded_row:
                     row_name = "{}_row:{}".format(filename, row)
-                    edges.add((value, row_name))
+                    edges.add((value, "/row", row_name))
 
         # Add col edges
         for cell_value, col in tr._read_columns_from_dataframe(df, columns, table_strategy):
@@ -52,16 +53,27 @@ def generate_graph(args):
             for value in decoded_value:
                 for col in decoded_col:
                     col_name = "col:" + col
-                    edges.add((value, col_name))
+                    edges.add((value, "/col", col_name))
 
     # Save output graph and dictionary
     graph = nx.Graph()
     cc = TokenDict()
-    with open(output_graph_path, "w") as f:
-        for node_x, node_y in iter(edges):
-            decoded_x, decoded_y = cc.get(node_x), cc.get(node_y)
-            f.write("{} {}\n".format(decoded_x, decoded_y))
-    cc.save(output_dictionary_path)
+    cnt = 0
+    import pdb
+    pdb.set_trace()
+    with open(output_graph_path.format("train"), "w") as f1:
+        with open(output_graph_path.format("test"), "w") as f2:
+            with open(output_graph_path.format("validation"), "w") as f3:
+                for node_x, type, node_y in iter(edges):
+                    cnt = (cnt + 1) % 100
+                    decoded_x, decoded_y = node_x, node_y  # cc.get(node_x), cc.get(node_y)
+                    if cnt < 90:
+                        f1.write("{}\t{}\t{}\n".format(decoded_x, type, decoded_y))
+                    if cnt >= 90 and cnt < 95:
+                        f2.write("{}\t{}\t{}\n".format(decoded_x, type, decoded_y))
+                    if cnt >= 95:
+                        f3.write("{}\t{}\t{}\n".format(decoded_x, type, decoded_y))
+    # cc.save(output_dictionary_path)
     print("Saved under", output_graph_path)
 
 
@@ -76,7 +88,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--suffix',
                         type=str,
-                        default='',  
+                        default='',
                         help='a suffix to identify'
                         )
 

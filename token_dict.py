@@ -16,7 +16,15 @@ class TokenDict:
             self.vocab[token] = self.cnt
             self.cnt += 1
         return str(self.vocab[token])
-
+    
+    def query(self, num):
+        for key in iter(self.vocab):
+            if self.vocab[key] == num: return key
+        return -1
+    
+    def query_list(self, lst):
+        return [self.query(x) for x in lst]
+    
     def save(self, output_path):
         f = open(output_path, "wb")
         pickle.dump(self.vocab, f)

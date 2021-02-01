@@ -39,7 +39,6 @@ def get_PCA_for_embedding(model, ndim=2):
 def vectorize_df(df, model, model_vocab=None, model_dict=None, model_type="word2vec"):
     length = len(df)
     x_vectorized = [[] for i in range(length)]
-
     if model_type == "node2vec" or model_type == "ProNE":
         from token_dict import TokenDict
         cc = TokenDict()
@@ -64,10 +63,10 @@ def textify_df(df, strategies, path):
         for value in decoded_value:
             input[row].append(value)
 
-    filename = "".join(table_name.split(".")[:-1])
-    for row in range(df.shape[0]):
-        row_name = "{}_row:{}".format(filename, str(row))
-        input[row].append(row_name)
+    # filename = "".join(table_name.split(".")[:-1])
+    # for row in range(df.shape[0]):
+    #     row_name = "{}_row:{}".format(filename, str(row))
+    #     input[row].append(row_name)
     return input
 
 
@@ -167,6 +166,24 @@ def classification_task_logr(X_train, X_test, y_train, y_test, n_estimators=100)
     model.fit(X_train, y_train)
     return show_stats(model, X_train, X_test, y_train, y_test)
 
+def plot_tf_history(history):
+    print(history.history.keys())
+    import matplotlib.pyplot as plt
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
 
 def classification_task_nn(X_train, X_test, y_train, y_test):
     import tensorflow as tf
@@ -174,7 +191,8 @@ def classification_task_nn(X_train, X_test, y_train, y_test):
     ncategories = np.max(y_train) + 1
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(input_size,)),
-        tf.keras.layers.Dense(128, activation=tf.nn.sigmoid),
+        # tf.keras.layers.Dense(128, activation=tf.nn.sigmoid),
+        tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(ncategories, activation=tf.nn.softmax)
     ])
 
@@ -182,6 +200,7 @@ def classification_task_nn(X_train, X_test, y_train, y_test):
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
     
-    model.fit(X_train, y_train, epochs=500, verbose = 0)
+    history = model.fit(X_train, y_train, epochs=100, verbose = 1, validation_data = (X_test, y_test))
+    # plot_tf_history(history)
     results = model.evaluate(X_test, y_test, verbose = 2)
     return show_stats(model, X_train, X_test, y_train, y_test, argmax = True)

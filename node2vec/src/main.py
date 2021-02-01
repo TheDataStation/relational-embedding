@@ -38,7 +38,7 @@ def parse_args():
 	parser.add_argument('--output', nargs='?', default='',
 	                    help='Embeddings path')
 
-	parser.add_argument('--dimensions', type=int, default=100,
+	parser.add_argument('--dimensions', type=int, default=50,
 	                    help='Number of dimensions. Default is 150.')
 
 	parser.add_argument('--walk-length', type=int, default=80,
@@ -50,7 +50,7 @@ def parse_args():
 	parser.add_argument('--window-size', type=int, default=10,
                     	help='Context size for optimization. Default is 10.')
 
-	parser.add_argument('--iter', default=10, type=int,
+	parser.add_argument('--iter', default=5, type=int,
                       help='Number of epochs in SGD')
 
 	parser.add_argument('--workers', type=int, default=8,

@@ -55,27 +55,30 @@ def evaluate_task(args):
     for path in all_embeddings_path:
         model = KeyedVectors.load_word2vec_format(path)
         table_name = path.split("/")[-1][:-4]
+        if "_sparse" in table_name or "_spectral" in table_name:
+            table_name = "_".join(table_name.split("_")[:-1])
         model_dict_path = "../graph/{}/{}.dict".format(args.task, table_name)
         print(model_dict_path)
 
         # Obtain textified & quantized data
         training_loss = []
         testing_loss = []
+        df_textified = EU.textify_df(
+            trimmed_table, strategies, location_processed)
+        x_vec = EU.vectorize_df(
+            df_textified, model, model.vocab,
+            model_dict=model_dict_path, model_type=method
+        )
+        
         for i in range(50, 100, 20):
-            df_textified = EU.textify_df(
-                trimmed_table, strategies, location_processed)
-            x_vec = EU.vectorize_df(
-                df_textified, model, model.vocab,
-                model_dict=model_dict_path, model_type=method
-            )
-
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(
                 df_textified, model_2dim, model.vocab,
                 model_dict=model_dict_path, model_type=method
             )
 
-            tests = train_test_split(x_vec_2dim, Y, test_size=test_size, random_state=10)
+            tests = train_test_split(
+                x_vec_2dim, Y, test_size=test_size, random_state=10)
             train_loss, test_loss = EU.classification_task_nn(*tests)
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
@@ -88,6 +91,7 @@ def evaluate_task(args):
         # print("2_dim:")
         # for n_estimators in [10, 50, 100]:
         #     classification_task(*tests_2dim, n_estimators=n_estimators)
+
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")

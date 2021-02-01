@@ -17,7 +17,7 @@ class Graph():
 
 		walk = [start_node]
 		for i in range(walk_length):
-			cur_nbrs = [n for n in G.neighbors(walk[i])]
+			cur_nbrs = [n for n in self.adjM[walk[i]]]
 			walk.append(random.choice(cur_nbrs))
 		return walk
 
@@ -26,6 +26,8 @@ class Graph():
 		Repeatedly simulate random walks from each node.
 		'''
 		G = self.G
+		self.adjM = [G.neighbors(x) for x in G.nodes()]
+		import pdb; pdb.set_trace()
 		walks = []
 		nodes = list(G.nodes())
 		print('Walk iteration:')
