@@ -80,9 +80,9 @@ def read_graph():
 	'''
 	print("starting")
 	if args.weighted:
-		G = nx.read_edgelist(args.input, nodetype=str, data=(('weight',int),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
+		G = nx.read_edgelist(args.input, nodetype=int, data=(('weight',int),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 	else:
-		G = nx.read_edgelist(args.input, nodetype=str, create_using=nx.DiGraph(), delimiter=' ', comments = "?")
+		G = nx.read_edgelist(args.input, nodetype=int, create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 		for edge in G.edges():
 			G[edge[0]][edge[1]]['weight'] = 1
 	G = G.to_undirected()
@@ -110,10 +110,10 @@ def main(args):
 	print("Walking Done!")
 
 	walks_save_path = "walks/" + args.input.split("/")[-1] + ".txt"
-	with open(walks_save_path, 'w') as filehandle:
+	with open(walks_save_path, 'w') as f:
 		for walk in walks: 
-			filehandle.writelines("%s " % place for place in walk)
-			filehandle.writelines("\n")
+			f.writelines("%s " % place for place in walk)
+			f.writelines("\n")
 
 	learn_embeddings(walks)
 

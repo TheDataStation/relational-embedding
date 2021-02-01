@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import random
 import time
+from tqdm import tqdm
 
 class Graph():
 	def __init__(self, nx_G, p, q):
@@ -13,12 +14,9 @@ class Graph():
 		'''
 		Simulate a random walk starting from start node.
 		'''
-		G = self.G
-
 		walk = [start_node]
 		for i in range(walk_length):
-			cur_nbrs = [n for n in self.adjM[walk[i]]]
-			walk.append(random.choice(cur_nbrs))
+			walk.append(random.choice(self.adjList[walk[i]]))
 		return walk
 
 	def simulate_walks(self, num_walks, walk_length):
@@ -26,15 +24,14 @@ class Graph():
 		Repeatedly simulate random walks from each node.
 		'''
 		G = self.G
-		self.adjM = [G.neighbors(x) for x in G.nodes()]
-		import pdb; pdb.set_trace()
+		self.adjList = [list(G.neighbors(x)) for x in G.nodes()]
 		walks = []
 		nodes = list(G.nodes())
 		print('Walk iteration:')
 		for walk_iter in range(num_walks):
 			print(str(walk_iter+1), '/', str(num_walks))
 			random.shuffle(nodes)
-			for node in nodes:
+			for node in tqdm(nodes):
 				walks.append(self.node2vec_walk(walk_length=walk_length, start_node=node))
 		return walks
 
