@@ -179,7 +179,6 @@ def classification_task_logr(X_train,
 
 
 def plot_tf_history(history):
-    print(history.history.keys())
     import matplotlib.pyplot as plt
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
