@@ -2,6 +2,7 @@ import pickle
 
 class TokenDict:
     def __init__(self):
+        # token -> numerical id: string -> int
         self.vocab = dict()
         self.cnt = 0
 

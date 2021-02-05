@@ -24,7 +24,6 @@ def generate_graph(args):
     fs = utils.all_data_files_in_path(data_config["location"])
     edges = set()
 
-    current = 0
     for path in tqdm(fs):
         table_name = path.split("/")[-1]
         table_strategy = strategies[table_name]
@@ -62,7 +61,7 @@ def generate_graph(args):
             decoded_x, decoded_y = cc.get(node_x), cc.get(node_y)
             f.write("{} {}\n".format(decoded_x, decoded_y))
     cc.save(output_dictionary_path)
-    print("Saved under", output_graph_path)
+    print("Saved {} edges under{}".format(len(edges), output_graph_path))
 
 
 if __name__ == "__main__":
