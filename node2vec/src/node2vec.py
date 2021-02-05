@@ -17,7 +17,7 @@ class Graph():
 		walk = [start_node]
 		for i in range(walk_length):
 			walk.append(random.choice(self.adjList[walk[i]]))
-		return walk
+		return list(map(lambda x: str(x), walk))
 
 	def simulate_walks(self, num_walks, walk_length):
 		'''

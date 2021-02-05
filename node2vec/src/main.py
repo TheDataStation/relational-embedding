@@ -38,7 +38,7 @@ def parse_args():
 	parser.add_argument('--output', nargs='?', default='',
 	                    help='Embeddings path')
 
-	parser.add_argument('--dimensions', type=int, default=50,
+	parser.add_argument('--dimensions', type=int, default=100,
 	                    help='Number of dimensions. Default is 150.')
 
 	parser.add_argument('--walk-length', type=int, default=80,
@@ -92,6 +92,7 @@ def learn_embeddings(walks):
 	'''
 	Learn embeddings by optimizing the Skipgram objective using SGD.
 	'''
+	import pdb; pdb.set_trace()
 	model = Word2Vec(walks, size=args.dimensions, window=args.window_size, min_count=0, sg=1, workers=args.workers, iter=args.iter)
 	model.wv.save_word2vec_format(args.output)
 	return

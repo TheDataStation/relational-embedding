@@ -13,10 +13,7 @@ import pandas as pd
 from gensim.models import Word2Vec, KeyedVectors
 import sys
 
-embedding_storage = {
-    "node2vec": '../node2vec/emb/',
-    "ProNE": '../ProNE/emb/'
-}
+embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
 
 with open("../embedding_config.json", "r") as jsonfile:
     embeddding_config = json.load(jsonfile)
@@ -37,10 +34,12 @@ def evaluate_task(args):
     target_column = config["target_column"]
 
     # Load data
-    trimmed_table = pd.read_csv(os.path.join(
-        "../", location_processed), sep=',', encoding='latin')
-    full_table = pd.read_csv(os.path.join(
-        "../", location + target_file), sep=',', encoding='latin')
+    trimmed_table = pd.read_csv(os.path.join("../", location_processed),
+                                sep=',',
+                                encoding='latin')
+    full_table = pd.read_csv(os.path.join("../", location + target_file),
+                             sep=',',
+                             encoding='latin')
 
     Y = full_table[target_column]
     if args.task in ["kraken", "financial", "genes"]:
@@ -48,8 +47,8 @@ def evaluate_task(args):
 
     # Set embeddings that are to be evaluated
     method = args.method
-    all_embeddings_path = EU.all_files_in_path(
-        embedding_storage[method], args.task)
+    all_embeddings_path = EU.all_files_in_path(embedding_storage[method],
+                                               args.task)
 
     # Run through the embedding list and do evaluation
     for path in all_embeddings_path:
@@ -63,22 +62,26 @@ def evaluate_task(args):
         # Obtain textified & quantized data
         training_loss = []
         testing_loss = []
-        df_textified = EU.textify_df(
-            trimmed_table, strategies, location_processed)
-        x_vec = EU.vectorize_df(
-            df_textified, model, model.vocab,
-            model_dict=model_dict_path, model_type=method
-        )
-        
+        df_textified = EU.textify_df(trimmed_table, strategies,
+                                     location_processed)
+        x_vec = EU.vectorize_df(df_textified,
+                                model,
+                                model.vocab,
+                                model_dict=model_dict_path,
+                                model_type=method)
+
         for i in range(50, 100, 20):
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
-            x_vec_2dim = EU.vectorize_df(
-                df_textified, model_2dim, model.vocab,
-                model_dict=model_dict_path, model_type=method
-            )
+            x_vec_2dim = EU.vectorize_df(df_textified,
+                                         model_2dim,
+                                         model.vocab,
+                                         model_dict=model_dict_path,
+                                         model_type=method)
 
-            tests = train_test_split(
-                x_vec_2dim, Y, test_size=test_size, random_state=10)
+            tests = train_test_split(x_vec_2dim,
+                                     Y,
+                                     test_size=test_size,
+                                     random_state=10)
             train_loss, test_loss = EU.classification_task_nn(*tests)
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
@@ -97,17 +100,11 @@ if __name__ == "__main__":
     print("Evaluating results with word2vec model:")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--task',
-        type=str,
-        required=True,
-        help='task to be evaluated on'
-    )
-    parser.add_argument(
-        '--method',
-        type=str,
-        help='method of training'
-    )
+    parser.add_argument('--task',
+                        type=str,
+                        required=True,
+                        help='task to be evaluated on')
+    parser.add_argument('--method', type=str, help='method of training')
 
     args = parser.parse_args()
 

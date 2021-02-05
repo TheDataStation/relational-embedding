@@ -2,7 +2,7 @@ import sys
 sys.path.append('..')
 import csv
 import pandas as pd
-import numpy as np 
+import numpy as np
 from relational_embedder.data_prep import data_prep_utils as dpu
 from textification import textify_relation as tr
 
@@ -17,9 +17,10 @@ num_bins = embeddding_config["num_bins"]
 
 
 def all_files_in_path(path, task):
-    fs = [join(path, f) for f in listdir(path)
-          if isfile(join(path, f)) and f != ".DS_Store"
-          and f.find(task) != -1 and f[-4:] == ".emb"]
+    fs = [
+        join(path, f) for f in listdir(path) if isfile(join(path, f))
+        and f != ".DS_Store" and f.find(task) != -1 and f[-4:] == ".emb"
+    ]
     return fs
 
 
@@ -28,15 +29,17 @@ def get_PCA_for_embedding(model, ndim=2):
     words = list(model.vocab.keys())
     word_vectors = np.array([model[w] for w in words])
 
-    twodim = pd.DataFrame(
-        PCA().fit_transform(word_vectors)[:, :ndim],
-        columns=["d" + str(i+1) for i in range(ndim)]
-    )
+    twodim = pd.DataFrame(PCA().fit_transform(word_vectors)[:, :ndim],
+                          columns=["d" + str(i + 1) for i in range(ndim)])
     twodim.index = words
     return twodim.T
 
 
-def vectorize_df(df, model, model_vocab=None, model_dict=None, model_type="word2vec"):
+def vectorize_df(df,
+                 model,
+                 model_vocab=None,
+                 model_dict=None,
+                 model_type="word2vec"):
     length = len(df)
     x_vectorized = [[] for i in range(length)]
     if model_type == "node2vec" or model_type == "ProNE":
@@ -50,13 +53,15 @@ def vectorize_df(df, model, model_vocab=None, model_dict=None, model_type="word2
                     x_vectorized[i] += list(model[cc.check(row[j])])
     return pd.DataFrame(x_vectorized)
 
+
 def textify_df(df, strategies, path):
     table_name = path.split("/")[-1]
     df = tr.quantize(df, strategies[table_name])
     columns = df.columns
     input = [[] for i in range(df.shape[0])]
 
-    for cell_value, row, col in tr._read_rows_from_dataframe(df, columns, strategies[table_name]):
+    for cell_value, row, col in tr._read_rows_from_dataframe(
+            df, columns, strategies[table_name]):
         grain_strategy = strategies[table_name][col]["grain"]
         decoded_row = dpu.encode_cell(row, grain=grain_strategy)
         decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
@@ -76,7 +81,6 @@ def textify_df(df, strategies, path):
 #         flag = ground_truth[i] in predicted_truth[i]
 #         precision.append(flag)
 #     return precision
-
 
 # def remove_hubness_and_run(X, y, n_neighbors=15):
 #     from skhubness import Hubness
@@ -135,21 +139,23 @@ def parse_strategy(s):
 
     return textification_strategy, integer_strategy
 
+
 ###################################################################
-#   More evaluation modules 
+#   More evaluation modules
 #
 ###################################################################
 
-def show_stats(model, X_train, X_test, y_train, y_test, argmax = False):
+
+def show_stats(model, X_train, X_test, y_train, y_test, argmax=False):
     X_pred_train = model.predict(X_train)
     X_pred_test = model.predict(X_test)
-    if argmax == True: 
-        X_pred_train = np.argmax(X_pred_train, axis = 1)
-        X_pred_test = np.argmax(X_pred_test, axis = 1)
+    if argmax == True:
+        X_pred_train = np.argmax(X_pred_train, axis=1)
+        X_pred_test = np.argmax(X_pred_test, axis=1)
     pscore_train = accuracy_score(y_train, X_pred_train)
     pscore_test = accuracy_score(y_test, X_pred_test)
-    print("Train accuracy {}, Test accuracy {}".format(
-        pscore_train, pscore_test))
+    print("Train accuracy {}, Test accuracy {}".format(pscore_train,
+                                                       pscore_test))
     return pscore_train, pscore_test
 
 
@@ -158,13 +164,19 @@ def classification_task_rf(X_train, X_test, y_train, y_test, n_estimators=100):
     model = RandomForestClassifier(n_estimators=n_estimators)
     model.fit(X_train, y_train)
     return show_stats(model, X_train, X_test, y_train, y_test)
-    
-def classification_task_logr(X_train, X_test, y_train, y_test, n_estimators=100):
+
+
+def classification_task_logr(X_train,
+                             X_test,
+                             y_train,
+                             y_test,
+                             n_estimators=100):
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import accuracy_score
     model = LogisticRegression(penalty='l2', solver='liblinear')
     model.fit(X_train, y_train)
     return show_stats(model, X_train, X_test, y_train, y_test)
+
 
 def plot_tf_history(history):
     print(history.history.keys())
@@ -185,22 +197,28 @@ def plot_tf_history(history):
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
 
-def classification_task_nn(X_train, X_test, y_train, y_test):
+
+def classification_task_nn(X_train, X_test, y_train, y_test, history=None):
     import tensorflow as tf
     input_size = X_train.shape[1]
     ncategories = np.max(y_train) + 1
     model = tf.keras.Sequential([
-        tf.keras.layers.Flatten(input_shape=(input_size,)),
+        tf.keras.layers.Flatten(input_shape=(input_size, )),
         # tf.keras.layers.Dense(128, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(ncategories, activation=tf.nn.softmax)
     ])
 
-    model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
-    
-    history = model.fit(X_train, y_train, epochs=100, verbose = 1, validation_data = (X_test, y_test))
-    # plot_tf_history(history)
-    results = model.evaluate(X_test, y_test, verbose = 2)
-    return show_stats(model, X_train, X_test, y_train, y_test, argmax = True)
+    model.compile(
+        optimizer='adam',
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=['accuracy'])
+
+    history = model.fit(X_train,
+                        y_train,
+                        epochs=500,
+                        verbose=0,
+                        validation_data=(X_test, y_test))
+    plot_tf_history(history)
+    model.evaluate(X_test, y_test, verbose=2)
+    return show_stats(model, X_train, X_test, y_train, y_test, argmax=True)
