@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 import json
 import pandas as pd
 from tqdm import tqdm
@@ -23,6 +24,7 @@ def generate_graph(args):
 
     fs = utils.all_data_files_in_path(data_config["location"])
     edges = set()
+    record_dict = defaultdict(list)
 
     for path in tqdm(fs):
         table_name = path.split("/")[-1]
@@ -40,19 +42,23 @@ def generate_graph(args):
             for value in decoded_value:
                 for row in decoded_row:
                     row_name = "{}_row:{}".format(filename, row)
-                    edges.add((value, row_name))
-        # Add col edges
-        for cell_value, col in tr._read_columns_from_dataframe(
-                df, columns, table_strategy):
-            grain_strategy = table_strategy[col]["grain"]
-            decoded_col = dpu.encode_cell(col, grain=grain_strategy)
-            decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
-            for value in decoded_value:
-                for col in decoded_col:
-                    col_name = "col:" + col
-                    edges.add((value, col_name))
-    
-    import pdb; pdb.set_trace()
+                    record_dict[value].append(row_name)
+                    # edges.add((value, row_name))
+
+        # # Add col edges
+        # for cell_value, col in tr._read_columns_from_dataframe(
+        #         df, columns, table_strategy):
+        #     grain_strategy = table_strategy[col]["grain"]
+        #     decoded_col = dpu.encode_cell(col, grain=grain_strategy)
+        #     decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
+        #     for value in decoded_value:
+        #         for col in decoded_col:
+        #             col_name = "col:" + col
+        #             edges.add((value, col_name))
+    for (token, lst) in record_dict.items():
+        if len(lst) <= 1500:
+            for row in lst:
+                edges.add((token, row))
     # Save output graph and dictionary
     graph = nx.Graph()
     cc = TokenDict()

@@ -38,6 +38,10 @@ def task_loader(args):
 
     for path in fs:
         df = pd.read_csv(path, encoding = 'latin1', sep=',', low_memory=False)
+        if target_column in df.columns: 
+            df = df.drop(columns = [target_column])
+            df.to_csv(path, index=False)
+
         table_name = path.split("/")[-1]
         strategies[table_name] = defaultdict(dict)
 
@@ -60,7 +64,7 @@ def task_loader(args):
 
             if df[col].dtype == np.object:
                 num_tokens_med = (df[col].str.count(' ') + 1).median()
-                if num_tokens_med >= 5: 
+                if num_tokens_med >= 10: 
                     grain_strategy = "token"
             
             strategies[table_name][col]["int"] = integer_strategy

@@ -48,6 +48,7 @@ def vectorize_df(df,
         cc.load(model_dict)
         for i in range(length):
             row = df[i]
+            x_vectorized[i] += list(model[cc.check("Classification_row:" + str(i))])
             for j in range(len(row)):
                 if cc.check(row[j]) in model_vocab:
                     x_vectorized[i] += list(model[cc.check(row[j])])
@@ -178,7 +179,7 @@ def classification_task_logr(X_train,
     return show_stats(model, X_train, X_test, y_train, y_test)
 
 
-def plot_tf_history(history):
+def plot_tf_history(history, history_name = None):
     import matplotlib.pyplot as plt
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
@@ -186,24 +187,32 @@ def plot_tf_history(history):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
-
+    if history_name is None: 
+        plt.show()
+    else: 
+        plt.savefig(history_name + "acc.png")
+    
+    plt.clf()
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
     plt.title('model loss')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
+    if history_name is None: 
+        plt.show()
+    else: 
+        plt.savefig(history_name + "loss.png")
+        
+    plt.clf()
 
 
-def classification_task_nn(X_train, X_test, y_train, y_test, history=None):
+def classification_task_nn(X_train, X_test, y_train, y_test, history_name=None):
     import tensorflow as tf
     input_size = X_train.shape[1]
     ncategories = np.max(y_train) + 1
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(input_size, )),
-        # tf.keras.layers.Dense(128, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(ncategories, activation=tf.nn.softmax)
     ])
@@ -216,8 +225,8 @@ def classification_task_nn(X_train, X_test, y_train, y_test, history=None):
     history = model.fit(X_train,
                         y_train,
                         epochs=500,
-                        verbose=0,
+                        verbose=1,
                         validation_data=(X_test, y_test))
-    plot_tf_history(history)
+    plot_tf_history(history, history_name)
     model.evaluate(X_test, y_test, verbose=2)
     return show_stats(model, X_train, X_test, y_train, y_test, argmax=True)

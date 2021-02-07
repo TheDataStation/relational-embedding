@@ -96,7 +96,7 @@ def evaluate_task(args):
 
 
 if __name__ == "__main__":
-    print("Evaluating results with word2vec model:")
+    print("Evaluating results with model:")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--task',
@@ -104,7 +104,7 @@ if __name__ == "__main__":
                         required=True,
                         help='task to be evaluated on')
     
-    parser.add_argument('--suffix', type=str, help='suffix of training experiment')
+    parser.add_argument('--suffix', type=str, default="", help='suffix of training experiment')
     parser.add_argument('--method', type=str, help='method of training')
 
     args = parser.parse_args()
