@@ -1,11 +1,9 @@
 import json
 import tensorflow as tf
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 import argparse
 import os
-import word2vec
 import visualizer as VS
 import eval_utils as EU
 import numpy as np
@@ -52,6 +50,7 @@ def evaluate_task(args):
 
     # Run through the embedding list and do evaluation
     for path in all_embeddings_path:
+        if args.suffix != "" and args.suffix not in path: continue
         model = KeyedVectors.load_word2vec_format(path)
         table_name = path.split("/")[-1][:-4]
         if "_sparse" in table_name or "_spectral" in table_name:
@@ -104,6 +103,8 @@ if __name__ == "__main__":
                         type=str,
                         required=True,
                         help='task to be evaluated on')
+    
+    parser.add_argument('--suffix', type=str, help='suffix of training experiment')
     parser.add_argument('--method', type=str, help='method of training')
 
     args = parser.parse_args()

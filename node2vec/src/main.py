@@ -92,9 +92,9 @@ def learn_embeddings(walks):
 	'''
 	Learn embeddings by optimizing the Skipgram objective using SGD.
 	'''
-	import pdb; pdb.set_trace()
 	model = Word2Vec(walks, size=args.dimensions, window=args.window_size, min_count=0, sg=1, workers=args.workers, iter=args.iter)
 	model.wv.save_word2vec_format(args.output)
+	print("Model trained and saved under {}".format(args.output))
 	return
 
 def main(args):
