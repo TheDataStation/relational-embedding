@@ -1,15 +1,11 @@
 import json
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
-
 import argparse
 import os
-import visualizer as VS
 import eval_utils as EU
 import numpy as np
 import pandas as pd
-from gensim.models import Word2Vec, KeyedVectors
-import sys
+from gensim.models import KeyedVectors
+from sklearn.model_selection import cross_val_score, train_test_split
 
 embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
 
@@ -69,19 +65,19 @@ def evaluate_task(args):
                                 model_dict=model_dict_path,
                                 model_type=method)
 
-        for i in range(50, 100, 20):
+        for i in [5, 20, 50, 100, 200, 250]:
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(df_textified,
                                          model_2dim,
                                          model.vocab,
                                          model_dict=model_dict_path,
                                          model_type=method)
-
+            # EU.remove_hubness_and_run(x_vec_2dim, Y, n_neighbors=5)
             tests = train_test_split(x_vec_2dim,
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
-            train_loss, test_loss = EU.classification_task_nn(*tests)
+            train_loss, test_loss = EU.classification_task_rf(*tests) #history_name = table_name + "_" + str(i))
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
         print(training_loss)

@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import random
 import time
+from numpy.random import choice 
 from tqdm import tqdm
 
 class Graph():
@@ -16,15 +17,21 @@ class Graph():
 		'''
 		walk = [start_node]
 		for i in range(walk_length):
-			walk.append(random.choice(self.adjList[walk[i]]))
+			nxt = choice(self.adjList[walk[i]], p = self.adjList_prob[walk[i]])
+			walk.append(nxt)
 		return list(map(lambda x: str(x), walk))
 
 	def simulate_walks(self, num_walks, walk_length):
 		'''
 		Repeatedly simulate random walks from each node.
 		'''
+		flatten = lambda t: [item for sublist in t for item in sublist]
+
 		G = self.G
 		self.adjList = [list(G.neighbors(x)) for x in G.nodes()]
+		self.adjList_prob = [[G[y][x]['weight'] for y in G.neighbors(x)] for x in G.nodes()]
+		self.adjList_prob = [[float(i) / sum(prob_vector) for i in prob_vector] for prob_vector in self.adjList_prob]
+		
 		walks = []
 		nodes = list(G.nodes())
 		print('Walk iteration:')

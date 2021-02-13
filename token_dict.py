@@ -1,10 +1,13 @@
 import pickle
 
 class TokenDict:
-    def __init__(self):
+    def __init__(self, path = None):
         # token -> numerical id: string -> int
-        self.vocab = dict()
-        self.cnt = 0
+        if path is None: 
+            self.vocab = dict()
+            self.cnt = 0
+        else:
+            self.load(path)
 
     def check(self, token):
         if token not in self.vocab:

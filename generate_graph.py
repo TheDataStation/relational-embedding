@@ -55,17 +55,27 @@ def generate_graph(args):
         #         for col in decoded_col:
         #             col_name = "col:" + col
         #             edges.add((value, col_name))
+
+    
+    # pp = defaultdict(list)
+    # for (token, lst) in record_dict.items():
+    #     if token == "?": continue 
+    #     for i in range(len(lst)):
+    #         for j in range(i+1, len(lst)):
+    #             pp[(lst[i],lst[j])].append(token)
+    import pdb; pdb.set_trace()
+    
     for (token, lst) in record_dict.items():
-        if len(lst) <= 1500:
+        if len(lst) <= 3000:
             for row in lst:
-                edges.add((token, row))
+                edges.add((token, row, 1.0 / len(lst)))
     # Save output graph and dictionary
     graph = nx.Graph()
     cc = TokenDict()
     with open(output_graph_path, "w") as f:
-        for node_x, node_y in iter(edges):
+        for node_x, node_y, weight in iter(edges):
             decoded_x, decoded_y = cc.get(node_x), cc.get(node_y)
-            f.write("{} {}\n".format(decoded_x, decoded_y))
+            f.write("{} {} {}\n".format(decoded_x, decoded_y, weight))
     cc.save(output_dictionary_path)
     print("Saved {} edges under{}".format(len(edges), output_graph_path))
 

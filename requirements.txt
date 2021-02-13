@@ -1,9 +1,8 @@
 networkx==2.5
-numpy==1.18.5
-scipy==1.4.1
-tensorflow==2.3.0
+numpy==1.19.5
 gensim==3.8.3
-pandas==1.2.1
 tqdm==4.47.0
-scikit-learn
 seaborn==0.11.1
+pandas==1.15.0
+scikit-learn==0.24.1
+tensorflow==2.4.1

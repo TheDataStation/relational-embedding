@@ -9,9 +9,9 @@ from textification import textify_relation as tr
 from os.path import isfile, join
 from os import listdir
 import json
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
 
-with open("../embedding_config.json", "r") as jsonfile:
+with open("./embedding_config.json", "r") as jsonfile:
     embeddding_config = json.load(jsonfile)
 num_bins = embeddding_config["num_bins"]
 
@@ -48,7 +48,8 @@ def vectorize_df(df,
         cc.load(model_dict)
         for i in range(length):
             row = df[i]
-            x_vectorized[i] += list(model[cc.check("Classification_row:" + str(i))])
+            x_vectorized[i] += list(model[cc.check("Classification_row:" +
+                                                   str(i))])
             for j in range(len(row)):
                 if cc.check(row[j]) in model_vocab:
                     x_vectorized[i] += list(model[cc.check(row[j])])
@@ -76,48 +77,62 @@ def textify_df(df, strategies, path):
     return input
 
 
-# def measure_quality(ground_truth, predicted_truth):
-#     precision = []
-#     for i in range(len(ground_truth)):
-#         flag = ground_truth[i] in predicted_truth[i]
-#         precision.append(flag)
-#     return precision
+def plot_token_distribution(walk_path, dict_path):
+    import matplotlib.pyplot as plt 
+    with open(walk_path, "r") as f: 
+        ls = f.readlines()
+    ls = [x.split(" ")[:-1] for x in ls]
+    df = pd.DataFrame(ls)
+    cnts = df.stack().value_counts() 
+    import pdb; pdb.set_trace()
+    cnts.hist()
+    plt.savefig("walk dis.png")
+    
+    from token_dict import TokenDict 
+    cc = TokenDict(dict_path)
+    tokens_most = list(map(lambda x: cc.query(int(x)), cnts.head(10).index))
+    print("Top 10 Most Freq tokens", tokens_most)
+    print(cnts.head(10))
+    tokens_least = list(map(lambda x: cc.query(int(x)), cnts.tail(10). index))
+    print("Top 10 Least Freq tokens", tokens_least)
+    print(cnts.tail(10))
 
-# def remove_hubness_and_run(X, y, n_neighbors=15):
-#     from skhubness import Hubness
-#     from sklearn.model_selection import cross_val_score
-#     from skhubness.neighbors import KNeighborsClassifier
 
-#     # Measure Hubness before and after removal (method mutual proximity)
-#     hub = Hubness(k=10, metric='cosine')
-#     hub.fit(X)
-#     k_skew = hub.score()
-#     print(f'Skewness = {k_skew:.3f}')
 
-#     hub_mp = Hubness(k=10, metric='cosine',
-#                      hubness='mutual_proximity')
-#     hub_mp.fit(X)
-#     k_skew_mp = hub_mp.score()
-#     print(f'Skewness after MP: {k_skew_mp:.3f} '
-#           f'(reduction of {k_skew - k_skew_mp:.3f})')
-#     print(f'Robin hood: {hub_mp.robinhood_index:.3f} '
-#           f'(reduction of {hub.robinhood_index - hub_mp.robinhood_index:.3f})')
+def remove_hubness_and_run(X, y, n_neighbors=15):
+    from skhubness import Hubness
+    from sklearn.model_selection import cross_val_score
+    from skhubness.neighbors import KNeighborsClassifier
 
-#     # Measure Classfication Accuracy before and after removal
-#     # vanilla kNN
-#     knn_standard = KNeighborsClassifier(
-#         n_neighbors=n_neighbors, metric='cosine')
-#     acc_standard = cross_val_score(knn_standard, X, y, cv=10)
+    # Measure Hubness before and after removal (method mutual proximity)
+    hub = Hubness(k=10, metric='cosine')
+    hub.fit(X)
+    k_skew = hub.score()
+    print(f'Skewness = {k_skew:.3f}')
 
-#     # kNN with hubness reduction (mutual proximity)
-#     knn_mp = KNeighborsClassifier(n_neighbors=n_neighbors,
-#                                   metric='cosine',
-#                                   hubness='mutual_proximity')
-#     acc_mp = cross_val_score(knn_mp, X, y, cv=10)
+    hub_mp = Hubness(k=10, metric='cosine', hubness='mutual_proximity')
+    hub_mp.fit(X)
+    k_skew_mp = hub_mp.score()
+    print(f'Skewness after MP: {k_skew_mp:.3f} '
+          f'(reduction of {k_skew - k_skew_mp:.3f})')
+    print(f'Robin hood: {hub_mp.robinhood_index:.3f} '
+          f'(reduction of {hub.robinhood_index - hub_mp.robinhood_index:.3f})')
 
-#     print(f'Accuracy (vanilla kNN): {acc_standard.mean():.3f}')
-#     print(f'Accuracy (kNN with hubness reduction): {acc_mp.mean():.3f}')
-#     return (acc_standard.mean(), acc_mp.mean())
+    # Measure Classfication Accuracy before and after removal
+    # vanilla kNN
+    knn_standard = KNeighborsClassifier(n_neighbors=n_neighbors,
+                                        metric='cosine')
+    acc_standard = cross_val_score(knn_standard, X, y, cv=3)
+
+    # kNN with hubness reduction (mutual proximity)
+    knn_mp = KNeighborsClassifier(n_neighbors=n_neighbors,
+                                  metric='cosine',
+                                  hubness='mutual_proximity')
+    acc_mp = cross_val_score(knn_mp, X, y, cv=3)
+
+    print(f'Accuracy (vanilla kNN): {acc_standard.mean():.3f}')
+    print(f'Accuracy (kNN with hubness reduction): {acc_mp.mean():.3f}')
+    return (acc_standard.mean(), acc_mp.mean())
 
 
 def parse_strategy(s):
@@ -155,6 +170,7 @@ def show_stats(model, X_train, X_test, y_train, y_test, argmax=False):
         X_pred_test = np.argmax(X_pred_test, axis=1)
     pscore_train = accuracy_score(y_train, X_pred_train)
     pscore_test = accuracy_score(y_test, X_pred_test)
+    print("Confusion Matrix:", confusion_matrix(y_test, X_pred_test))
     print("Train accuracy {}, Test accuracy {}".format(pscore_train,
                                                        pscore_test))
     return pscore_train, pscore_test
@@ -167,19 +183,17 @@ def classification_task_rf(X_train, X_test, y_train, y_test, n_estimators=100):
     return show_stats(model, X_train, X_test, y_train, y_test)
 
 
-def classification_task_logr(X_train,
-                             X_test,
-                             y_train,
-                             y_test,
-                             n_estimators=100):
+def classification_task_logr(X_train, X_test, y_train, y_test):
     from sklearn.linear_model import LogisticRegression
-    from sklearn.metrics import accuracy_score
-    model = LogisticRegression(penalty='l2', solver='liblinear')
+    model = LogisticRegression(penalty='elasticnet',
+                               solver='saga',
+                               l1_ratio=0.9,
+                               max_iter=2000)
     model.fit(X_train, y_train)
     return show_stats(model, X_train, X_test, y_train, y_test)
 
 
-def plot_tf_history(history, history_name = None):
+def plot_tf_history(history, history_name=None):
     import matplotlib.pyplot as plt
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
@@ -187,11 +201,11 @@ def plot_tf_history(history, history_name = None):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    if history_name is None: 
+    if history_name is None:
         plt.show()
-    else: 
+    else:
         plt.savefig(history_name + "acc.png")
-    
+
     plt.clf()
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -199,21 +213,26 @@ def plot_tf_history(history, history_name = None):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    if history_name is None: 
+    if history_name is None:
         plt.show()
-    else: 
+    else:
         plt.savefig(history_name + "loss.png")
-        
+
     plt.clf()
 
 
-def classification_task_nn(X_train, X_test, y_train, y_test, history_name=None):
+def classification_task_nn(X_train,
+                           X_test,
+                           y_train,
+                           y_test,
+                           history_name=None):
     import tensorflow as tf
     input_size = X_train.shape[1]
     ncategories = np.max(y_train) + 1
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(input_size, )),
         tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
+        # tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(ncategories, activation=tf.nn.softmax)
     ])
 

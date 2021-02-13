@@ -38,7 +38,7 @@ def parse_args():
 	parser.add_argument('--output', nargs='?', default='',
 	                    help='Embeddings path')
 
-	parser.add_argument('--dimensions', type=int, default=100,
+	parser.add_argument('--dimensions', type=int, default=250,
 	                    help='Number of dimensions. Default is 150.')
 
 	parser.add_argument('--walk-length', type=int, default=80,
@@ -53,7 +53,7 @@ def parse_args():
 	parser.add_argument('--iter', default=15, type=int,
                       help='Number of epochs in SGD')
 
-	parser.add_argument('--workers', type=int, default=8,
+	parser.add_argument('--workers', type=int, default=16,
 	                    help='Number of parallel workers. Default is 8.')
 
 	parser.add_argument('--p', type=float, default=1,
@@ -80,7 +80,7 @@ def read_graph():
 	'''
 	print("starting")
 	if args.weighted:
-		G = nx.read_edgelist(args.input, nodetype=int, data=(('weight',int),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
+		G = nx.read_edgelist(args.input, nodetype=int, data=(('weight',float),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 	else:
 		G = nx.read_edgelist(args.input, nodetype=int, create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 		for edge in G.edges():
@@ -115,7 +115,6 @@ def main(args):
 		for walk in walks: 
 			f.writelines("%s " % place for place in walk)
 			f.writelines("\n")
-
 	learn_embeddings(walks)
 
 if __name__ == "__main__":
