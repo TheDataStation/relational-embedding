@@ -68,7 +68,7 @@ def generate_graph(args):
     for (token, lst) in record_dict.items():
         if len(lst) <= 3000:
             for row in lst:
-                edges.add((token, row, 1.0 / len(lst)))
+                edges.add((token, row, 1.0))
     # Save output graph and dictionary
     graph = nx.Graph()
     cc = TokenDict()

@@ -77,7 +77,7 @@ def evaluate_task(args):
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
-            train_loss, test_loss = EU.classification_task_rf(*tests) #history_name = table_name + "_" + str(i))
+            train_loss, test_loss = EU.classification_task_logr(*tests) # nn(*tests, history_name = table_name + "_" + str(i))
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
         print(training_loss)

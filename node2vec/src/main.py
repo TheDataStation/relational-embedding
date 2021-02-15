@@ -41,7 +41,7 @@ def parse_args():
 	parser.add_argument('--dimensions', type=int, default=250,
 	                    help='Number of dimensions. Default is 150.')
 
-	parser.add_argument('--walk-length', type=int, default=80,
+	parser.add_argument('--walk-length', type=int, default=160,
 	                    help='Length of walk per source. Default is 80.')
 
 	parser.add_argument('--num-walks', type=int, default=10,
@@ -82,9 +82,10 @@ def read_graph():
 	if args.weighted:
 		G = nx.read_edgelist(args.input, nodetype=int, data=(('weight',float),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 	else:
-		G = nx.read_edgelist(args.input, nodetype=int, create_using=nx.DiGraph(), delimiter=' ', comments = "?")
-		for edge in G.edges():
-			G[edge[0]][edge[1]]['weight'] = 1
+		G = nx.read_edgelist(args.input, nodetype=int, data=(('weight',float),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
+		# G = nx.read_edgelist(args.input, nodetype=int, create_using=nx.DiGraph(), delimiter=' ', comments = "?")
+		# for edge in G.edges():
+		# 	G[edge[0]][edge[1]]['weight'] = 1
 	G = G.to_undirected()
 	return G
 
@@ -103,14 +104,14 @@ def main(args):
 	'''
 	nx_G = read_graph()
 	print("Reading Done!")
-	G = node2vec.Graph(nx_G, args.p, args.q)
+	G = node2vec.Graph(nx_G, args.p, args.q, args.weighted)
 	print("Creation Done!")
 	G.preprocess_transition_probs()
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
 	print("Walking Done!")
 
-	walks_save_path = "walks/" + args.input.split("/")[-1] + ".txt"
+	walks_save_path = "walks/" + args.input.split("/")[-1] + "160.txt"
 	with open(walks_save_path, 'w') as f:
 		for walk in walks: 
 			f.writelines("%s " % place for place in walk)

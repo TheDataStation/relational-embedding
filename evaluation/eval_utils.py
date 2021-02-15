@@ -1,19 +1,14 @@
 import sys
 sys.path.append('..')
-import csv
-import pandas as pd
-import numpy as np
-from relational_embedder.data_prep import data_prep_utils as dpu
-from textification import textify_relation as tr
-
-from os.path import isfile, join
-from os import listdir
-import json
 from sklearn.metrics import accuracy_score, confusion_matrix
-
-with open("./embedding_config.json", "r") as jsonfile:
-    embeddding_config = json.load(jsonfile)
-num_bins = embeddding_config["num_bins"]
+import json
+from os import listdir, walk
+from os.path import isfile, join
+from textification import textify_relation as tr
+from relational_embedder.data_prep import data_prep_utils as dpu
+import numpy as np
+import pandas as pd
+import csv
 
 
 def all_files_in_path(path, task):
@@ -77,27 +72,43 @@ def textify_df(df, strategies, path):
     return input
 
 
-def plot_token_distribution(walk_path, dict_path):
-    import matplotlib.pyplot as plt 
-    with open(walk_path, "r") as f: 
+def plot_token_distribution(walk_path, dict_path, fig_path = "walk_distri.png"):
+    import matplotlib.pyplot as plt
+    with open(walk_path, "r") as f:
         ls = f.readlines()
     ls = [x.split(" ")[:-1] for x in ls]
-    df = pd.DataFrame(ls)
-    cnts = df.stack().value_counts() 
-    import pdb; pdb.set_trace()
-    cnts.hist()
-    plt.savefig("walk dis.png")
-    
-    from token_dict import TokenDict 
+    cnts = pd.DataFrame(ls).stack().value_counts()
+    cnts.hist(range=(0, 4000))
+    plt.savefig(fig_path)
+
+    from token_dict import TokenDict
     cc = TokenDict(dict_path)
-    tokens_most = list(map(lambda x: cc.query(int(x)), cnts.head(10).index))
-    print("Top 10 Most Freq tokens", tokens_most)
+    cnts = pd.DataFrame({"cnts": cnts})
+    cnts["token"] = cnts.apply(lambda x: cc.query(int(x.name)), axis=1)
+    print("Top 10 Most Freq tokens")
     print(cnts.head(10))
-    tokens_least = list(map(lambda x: cc.query(int(x)), cnts.tail(10). index))
-    print("Top 10 Least Freq tokens", tokens_least)
+    print("Top 10 Least Freq tokens")
     print(cnts.tail(10))
+    return cnts
 
-
+def remove_nonrow_tokens(walk_path, dict_path):
+    with open(walk_path, "r") as f:
+        ls = f.readlines()
+    ls = [x.split(" ")[:-1] for x in ls]
+    from token_dict import TokenDict
+    cc = TokenDict(dict_path)
+    
+    lst = cc.get_all_tokens("_row:")
+    print(len(ls), len(ls[0]))
+    from tqdm import tqdm
+    res = [] 
+    # Graph is bipartite 
+    for row in tqdm(ls): 
+        if int(row[0]) in lst: 
+            res.append(row[::2])
+        else:
+            res.append(row[1::2])
+    return res
 
 def remove_hubness_and_run(X, y, n_neighbors=15):
     from skhubness import Hubness

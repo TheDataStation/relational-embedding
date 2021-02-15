@@ -8,6 +8,7 @@ class TokenDict:
             self.cnt = 0
         else:
             self.load(path)
+        self.path = path
 
     def check(self, token):
         if token not in self.vocab:
@@ -23,11 +24,18 @@ class TokenDict:
     
     def query(self, num):
         for key in iter(self.vocab):
-            if self.vocab[key] == num: return key
+            if self.vocab[key] == int(num): return key
         return -1
     
     def query_list(self, lst):
         return [self.query(x) for x in lst]
+
+    def get_all_tokens(self, token):
+        lst = [] 
+        for key in iter(self.vocab):
+            if token in key: 
+                lst.append(int(self.vocab[key]))
+        return lst 
     
     def save(self, output_path):
         f = open(output_path, "wb")

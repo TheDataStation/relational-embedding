@@ -6,10 +6,11 @@ from numpy.random import choice
 from tqdm import tqdm
 
 class Graph():
-	def __init__(self, nx_G, p, q):
+	def __init__(self, nx_G, p, q, is_weighted):
 		self.G = nx_G
 		self.p = p
 		self.q = q
+		self.weighted = is_weighted
 
 	def node2vec_walk(self, walk_length, start_node):
 		'''
@@ -17,7 +18,10 @@ class Graph():
 		'''
 		walk = [start_node]
 		for i in range(walk_length):
-			nxt = choice(self.adjList[walk[i]], p = self.adjList_prob[walk[i]])
+			if self.weighted: 
+				nxt = choice(self.adjList[walk[i]], p = self.adjList_prob[walk[i]])
+			else: 
+				nxt = choice(self.adjList[walk[i]])
 			walk.append(nxt)
 		return list(map(lambda x: str(x), walk))
 
