@@ -95,6 +95,8 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
 
     total = len(paths)
     current = 0
+    with open("./data/strategies/genes.txt", "r") as jsonfile:
+        strategies = json.load(jsonfile)
     for path in tqdm(paths):
         if debug:
             print(str(current) + "/" + str(total) + ":" + path)
@@ -102,25 +104,27 @@ def serialize_row_and_column(paths, output_file, integer_strategy=None, grain=No
         
         if "schema" in path or "json" in path: 
             continue 
+        table_name = path.split("/")[-1]
+        table_strategy = strategies[table_name]
         df = pd.read_csv(path, encoding='latin1', sep=',')
-        df = quantize(df, excluding = ["event_id", "result"])
+        df = quantize(df, table_strategy)
+        columns = df.columns 
         # Check if relation is valid. Otherwise skip to next
         # if not dpu.valid_relation(df):
             # continue
         with open(output_file, 'a') as f:
-            for _ in range(20):
-                df = df.iloc[np.random.permutation(len(df))]
-                df = df[np.random.permutation(df.columns)]
-                # Rows
-                for cell_value in _read_rows_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
-                    values = dpu.encode_cell(cell_value, grain=grain)
-                    for cv in values:
-                        f.write(" " + cv)
-                # Columns
-                for cell_value in _read_columns_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
-                    values = dpu.encode_cell(cell_value, grain=grain)
-                    for cv in values:
-                        f.write(" " + cv)
+            for cell_value, row, col in _read_rows_from_dataframe(
+                df, columns, table_strategy):
+                grain_strategy = table_strategy[col]["grain"]
+                decoded_row = dpu.encode_cell(row, grain=grain_strategy)
+                decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
+                for cv in decoded_value:
+                    f.write(" " + cv)
+            # Columns
+            # for cell_value in _read_columns_from_dataframe(df, df.columns, integer_strategy=integer_strategy):
+            #     values = dpu.encode_cell(cell_value, grain=grain)
+            #     for cv in values:
+            #         f.write(" " + cv)
     f.close()
 
 def alex__read_rows_from_dataframe(df, columns, integer_strategy='skip'):

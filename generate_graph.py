@@ -25,6 +25,7 @@ def generate_graph(args):
     fs = utils.all_data_files_in_path(data_config["location"])
     edges = set()
     record_dict = defaultdict(list)
+    record_dict2 = defaultdict(list)
 
     for path in tqdm(fs):
         table_name = path.split("/")[-1]
@@ -43,34 +44,13 @@ def generate_graph(args):
                 for row in decoded_row:
                     row_name = "{}_row:{}".format(filename, row)
                     record_dict[value].append(row_name)
-                    # edges.add((value, row_name))
-
-        # # Add col edges
-        # for cell_value, col in tr._read_columns_from_dataframe(
-        #         df, columns, table_strategy):
-        #     grain_strategy = table_strategy[col]["grain"]
-        #     decoded_col = dpu.encode_cell(col, grain=grain_strategy)
-        #     decoded_value = dpu.encode_cell(cell_value, grain=grain_strategy)
-        #     for value in decoded_value:
-        #         for col in decoded_col:
-        #             col_name = "col:" + col
-        #             edges.add((value, col_name))
-
-    
-    # pp = defaultdict(list)
-    # for (token, lst) in record_dict.items():
-    #     if token == "?": continue 
-    #     for i in range(len(lst)):
-    #         for j in range(i+1, len(lst)):
-    #             pp[(lst[i],lst[j])].append(token)
-    import pdb; pdb.set_trace()
     
     for (token, lst) in record_dict.items():
-        if len(lst) <= 3000:
+        if len(lst) <= 5000:
             for row in lst:
-                edges.add((token, row, 1.0))
+                edges.add((token, row, 1 / len(lst)))
+    import pdb; pdb.set_trace()
     # Save output graph and dictionary
-    graph = nx.Graph()
     cc = TokenDict()
     with open(output_graph_path, "w") as f:
         for node_x, node_y, weight in iter(edges):

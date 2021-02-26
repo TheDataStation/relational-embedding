@@ -38,7 +38,7 @@ def parse_args():
 	parser.add_argument('--output', nargs='?', default='',
 	                    help='Embeddings path')
 
-	parser.add_argument('--dimensions', type=int, default=250,
+	parser.add_argument('--dimensions', type=int, default=50,
 	                    help='Number of dimensions. Default is 150.')
 
 	parser.add_argument('--walk-length', type=int, default=160,
@@ -110,13 +110,31 @@ def main(args):
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
 	print("Walking Done!")
-
-	walks_save_path = "walks/" + args.input.split("/")[-1] + "160.txt"
+	import pdb; pdb.set_trace()
+	walks_save_path = "walks/" + args.input.split("/")[-1] + "_160.txt"
 	with open(walks_save_path, 'w') as f:
 		for walk in walks: 
 			f.writelines("%s " % place for place in walk)
 			f.writelines("\n")
+
 	learn_embeddings(walks)
+
+	import pandas as pd 
+	from collections import defaultdict
+	import pdb; pdb.set_trace()
+	cnts = pd.DataFrame(walks).stack().value_counts()
+	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
+	additional_walks = max(int(args.num_walks * 0.1), 8)
+	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
+	args.output = args.output[:-4] + "_restart.emb"
+
+	walks_save_path = "walks/" + args.input.split("/")[-1] + "_restart.txt"
+	new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
+	with open(walks_save_path, 'w') as f:
+		for walk in new_walks: 
+			f.writelines("%s " % place for place in walk)
+			f.writelines("\n")
+	learn_embeddings(new_walks)
 
 if __name__ == "__main__":
 	args = parse_args()

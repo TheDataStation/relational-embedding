@@ -45,9 +45,10 @@ def vectorize_df(df,
             row = df[i]
             x_vectorized[i] += list(model[cc.check("Classification_row:" +
                                                    str(i))])
-            for j in range(len(row)):
-                if cc.check(row[j]) in model_vocab:
-                    x_vectorized[i] += list(model[cc.check(row[j])])
+            # for j in range(len(row)):
+            #     if cc.check(row[j]) in model_vocab:
+            #         x_vectorized[i] += list(model[cc.check(row[j])])
+    # import pdb; pdb.set_trace()
     return pd.DataFrame(x_vectorized)
 
 
@@ -74,11 +75,12 @@ def textify_df(df, strategies, path):
 
 def plot_token_distribution(walk_path, dict_path, fig_path = "walk_distri.png"):
     import matplotlib.pyplot as plt
+    plt.clf()
     with open(walk_path, "r") as f:
         ls = f.readlines()
     ls = [x.split(" ")[:-1] for x in ls]
     cnts = pd.DataFrame(ls).stack().value_counts()
-    cnts.hist(range=(0, 4000))
+    cnts.hist(range=(0, 1500))
     plt.savefig(fig_path)
 
     from token_dict import TokenDict
@@ -181,7 +183,7 @@ def show_stats(model, X_train, X_test, y_train, y_test, argmax=False):
         X_pred_test = np.argmax(X_pred_test, axis=1)
     pscore_train = accuracy_score(y_train, X_pred_train)
     pscore_test = accuracy_score(y_test, X_pred_test)
-    print("Confusion Matrix:", confusion_matrix(y_test, X_pred_test))
+    # print("Confusion Matrix:", confusion_matrix(y_test, X_pred_test))
     print("Train accuracy {}, Test accuracy {}".format(pscore_train,
                                                        pscore_test))
     return pscore_train, pscore_test
@@ -243,7 +245,6 @@ def classification_task_nn(X_train,
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(input_size, )),
         tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
-        # tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(ncategories, activation=tf.nn.softmax)
     ])
 
@@ -255,8 +256,8 @@ def classification_task_nn(X_train,
     history = model.fit(X_train,
                         y_train,
                         epochs=500,
-                        verbose=1,
+                        verbose=0,
                         validation_data=(X_test, y_test))
     plot_tf_history(history, history_name)
-    model.evaluate(X_test, y_test, verbose=2)
+    model.evaluate(X_test, y_test, verbose=0)
     return show_stats(model, X_train, X_test, y_train, y_test, argmax=True)
