@@ -1,15 +1,11 @@
 import json
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
-
 import argparse
 import os
-import visualizer as VS
 import eval_utils as EU
 import numpy as np
 import pandas as pd
-from gensim.models import Word2Vec, KeyedVectors
-import sys
+from gensim.models import KeyedVectors
+from sklearn.model_selection import cross_val_score, train_test_split
 
 embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
 
@@ -51,6 +47,7 @@ def evaluate_task(args):
     # Run through the embedding list and do evaluation
     for path in all_embeddings_path:
         if args.suffix != "" and args.suffix not in path: continue
+        if args.suffix == "" and "_" in path: continue 
         model = KeyedVectors.load_word2vec_format(path)
         table_name = path.split("/")[-1][:-4]
         if "_sparse" in table_name or "_spectral" in table_name:
@@ -69,19 +66,19 @@ def evaluate_task(args):
                                 model_dict=model_dict_path,
                                 model_type=method)
 
-        for i in range(50, 100, 20):
+        for i in [5, 20, 50, 100, 200, 250]:
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(df_textified,
                                          model_2dim,
                                          model.vocab,
                                          model_dict=model_dict_path,
                                          model_type=method)
-
+            # EU.remove_hubness_and_run(x_vec_2dim, Y, n_neighbors=5)
             tests = train_test_split(x_vec_2dim,
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
-            train_loss, test_loss = EU.classification_task_nn(*tests)
+            train_loss, test_loss = EU.classification_task_logr(*tests) # nn(*tests, history_name = table_name + "_" + str(i))
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
         print(training_loss)
@@ -96,7 +93,7 @@ def evaluate_task(args):
 
 
 if __name__ == "__main__":
-    print("Evaluating results with word2vec model:")
+    print("Evaluating results with model:")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--task',
@@ -104,7 +101,7 @@ if __name__ == "__main__":
                         required=True,
                         help='task to be evaluated on')
     
-    parser.add_argument('--suffix', type=str, help='suffix of training experiment')
+    parser.add_argument('--suffix', type=str, default="", help='suffix of training experiment')
     parser.add_argument('--method', type=str, help='method of training')
 
     args = parser.parse_args()

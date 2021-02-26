@@ -169,11 +169,10 @@ def classification_task_rf(X_train, X_test, y_train, y_test, n_estimators=100):
 def classification_task_logr(X_train,
                              X_test,
                              y_train,
-                             y_test,
-                             n_estimators=100):
+                             y_test):
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import accuracy_score
-    model = LogisticRegression(penalty='l2', solver='liblinear')
+    model = LogisticRegression(penalty='l1', solver='liblinear')
     model.fit(X_train, y_train)
     return show_stats(model, X_train, X_test, y_train, y_test)
 
