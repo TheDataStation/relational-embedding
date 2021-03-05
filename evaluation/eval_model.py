@@ -5,13 +5,15 @@ from sklearn.model_selection import train_test_split
 
 import argparse
 import os
-import word2vec
+#import word2vec
 import visualizer as VS
 import eval_utils as EU
 import numpy as np
 import pandas as pd
 from gensim.models import Word2Vec, KeyedVectors
 import sys
+from sklearn.linear_model import Lasso, LinearRegression
+from sklearn.model_selection import cross_val_score, train_test_split
 
 embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
 
@@ -40,9 +42,9 @@ def evaluate_task(args):
     full_table = pd.read_csv(os.path.join("../", location + target_file),
                              sep=',',
                              encoding='latin')
-
+   
     Y = full_table[target_column]
-    if args.task in ["kraken", "financial", "genes"]:
+    if args.task in ["kraken", "financial", "gene"]:
         Y = pd.Categorical(Y).codes
 
     # Set embeddings that are to be evaluated
@@ -77,24 +79,33 @@ def evaluate_task(args):
                                          model.vocab,
                                          model_dict=model_dict_path,
                                          model_type=method)
-
+            print(x_vec_2dim.shape, Y.shape)
+            x_vec_2dim['Y'] = Y
+            x_vec_2dim = x_vec_2dim.fillna(0)
+            #x_vec_2dim = x_vec_2dim.dropna(axis=0, how='any')
+            Y = x_vec_2dim['Y']
+            x_vec_2dim =  x_vec_2dim.drop('Y', axis = 1)
+            print(x_vec_2dim.shape, Y.shape)
             tests = train_test_split(x_vec_2dim,
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
-            train_loss, test_loss = EU.classification_task_nn(*tests)
-            training_loss.append(train_loss)
-            testing_loss.append(test_loss)
-        print(training_loss)
-        print(testing_loss)
-        # tests_2dim = train_test_split(x_vec_2dim, Y, test_size=test_size, random_state=10)
-        # print("{}_dim:".format(model.vector_size))
-        # for n_estimators in [10, 50, 100]:
-        #     classification_task(*tests, n_estimators=n_estimators)
-        # print("2_dim:")
-        # for n_estimators in [10, 50, 100]:
-        #     classification_task(*tests_2dim, n_estimators=n_estimators)
+            #train_loss, test_loss = 
+            EU.lassoRegression(*tests)
+            #training_loss.append(train_loss)
+            #testing_loss.append(test_loss[0])
+        #     print(train_loss)
+        #     print(test_loss)
+        # print("LR Train Loss: {}, Test Loss: {}".format(train_loss, test_loss))
 
+    
+
+def simple_regression(X_train, X_test, y_train, y_test):
+    lr = LinearRegression()
+    lr.fit(X_train, y_train)
+    train_score = lr.score(X_train, y_train)
+    test_score = lr.score(X_test, y_test)
+    print("LR Train score: {}, Test score: {}".format(train_score, test_score))
 
 if __name__ == "__main__":
     print("Evaluating results with word2vec model:")

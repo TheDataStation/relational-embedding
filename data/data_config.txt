@@ -38,5 +38,53 @@
         "name": "genes",
         "task_type": "classification",
         "location_processed": "./data/genes/Classification.csv"
+    },
+    "bio": {
+        "location": "./data/Biodegradability/",
+        "target_file": "base_processed.csv",
+        "target_column": "logp",
+        "name": "bio",
+        "task_type": "regression",
+        "location_processed": "./data/Biodegradability/molecule.csv"
+    },
+    "countries": {
+        "location": "./data/Countries/",
+        "target_file": "base_processed.csv",
+        "target_column": "2012",
+        "name": "countries",
+        "task_type": "regression",
+        "location_processed": "./data/Countries/target.csv"
+    },
+    "sales": {
+        "location": "./data/SalesDB/",
+        "target_file": "base_processed.csv",
+        "target_column": "Quantity",
+        "name": "sales",
+        "task_type": "regression",
+        "location_processed": "./data/SalesDB/Sales.csv"
+    },
+    "tria": {
+        "location": "./data/Triazine/",
+        "target_file": "base_processed.csv",
+        "target_column": "activity",
+        "name": "tria",
+        "task_type": "regression",
+        "location_processed": "./data/Triazine/molecule.csv"
+    },
+    "ccs": {
+        "location": "./data/CCS/",
+        "target_file": "base_processed.csv",
+        "target_column": "Price",
+        "name": "ccs",
+        "task_type": "regression",
+        "location_processed": "./data/CCS/transactions_1k.csv"
+    },
+    "restbase": {
+        "location": "./data/Restbase/",
+        "target_file": "base_processed.csv",
+        "target_column": "review",
+        "name": "restbase",
+        "task_type": "regression",
+        "location_processed": "./data/Restbase/generalinfo.csv"
     }
 }

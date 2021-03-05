@@ -1,8 +1,6 @@
 '''
 Reference implementation of node2vec.
-
 Author: Aditya Grover
-
 For more details, refer to the paper:
 node2vec: Scalable Feature Learning for Networks
 Aditya Grover and Jure Leskovec
@@ -92,9 +90,9 @@ def learn_embeddings(walks):
 	'''
 	Learn embeddings by optimizing the Skipgram objective using SGD.
 	'''
-	import pdb; pdb.set_trace()
 	model = Word2Vec(walks, size=args.dimensions, window=args.window_size, min_count=0, sg=1, workers=args.workers, iter=args.iter)
 	model.wv.save_word2vec_format(args.output)
+	print("Model trained and saved under {}".format(args.output))
 	return
 
 def main(args):
@@ -121,3 +119,4 @@ def main(args):
 if __name__ == "__main__":
 	args = parse_args()
 	main(args)
+

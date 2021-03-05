@@ -21,7 +21,7 @@ with open("../embedding_config.json", "r") as jsonfile:
     embeddding_config = json.load(jsonfile)
 num_bins = embeddding_config["num_bins"]
 
-taxi_data_path = "../data/taxi_small/data"
+data_path = "../data/taxi_samll/data"
 word2vec_model_path = "../word2vec/taxi_small.bin"
 
 def all_files_in_path(path):
@@ -30,7 +30,7 @@ def all_files_in_path(path):
 
 def join_tables(df):
     df_joined = df 
-    fs = all_files_in_path(taxi_data_path)
+    fs = all_files_in_path(data_path)
     for f in fs:
         if f == "../data/taxi_small/base_data.csv" or "meta" in f or "json" in f:
             continue
