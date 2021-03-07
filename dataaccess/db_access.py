@@ -5,12 +5,12 @@ from sqlalchemy.sql.sqltypes import INTEGER, TEXT, VARCHAR
 
 class DBConn:
 
-    def __init__(self, user, password, host, port, db):
-        con, meta = self.connect_db(user, password, host, port, db)
+    def __init__(self, db):
+        con, meta = self.connect_db(db)
         self.con = con
         self.metadata = meta
 
-    def connect_db(self, user, password, host, port, db):
+    def connect_db(self, db):
         """
         Connects to postgresql db and returns connection and db object
         :param user:
@@ -20,9 +20,10 @@ class DBConn:
         :param db:
         :return:
         """
-        url = 'postgresql://{}:{}@{}:{}/{}'
-        url = url.format(user, password, host, port, db)
-        con = sqlalchemy.create_engine(url, client_encoding='utf8')
+        url = 'mysql+pymysql://guest:relational@relational.fit.cvut.cz:3306/{}' #'postgresql://{}:{}@{}:{}/{}'
+        url = url.format(db)
+        print(url) 
+        con = sqlalchemy.create_engine(url)#, client_encoding='utf8')
         meta = sqlalchemy.MetaData(bind=con, reflect=True)
         return con, meta
 
@@ -108,7 +109,7 @@ def _count_unique_text_records(conn, tables):
 if __name__ == "__main__":
     print("DB Access")
 
-    conn = DBConn("postgres", "admin", "localhost", "5432", "drugcentral")
+    conn = DBConn("Biodegradability")
 
     print(conn.metadata)
 
@@ -143,5 +144,7 @@ if __name__ == "__main__":
     # chembl_21   -> 14M
     # imdb        -> 36M
     # drugcentral ->  1M
+
+
 
 

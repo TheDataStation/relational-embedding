@@ -10,6 +10,11 @@ from os.path import isfile, join
 from os import listdir
 import json
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import Normalizer
+from sklearn.pipeline import Pipeline
+from sklearn import metrics
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestRegressor
 
 with open("../embedding_config.json", "r") as jsonfile:
     embeddding_config = json.load(jsonfile)
@@ -196,6 +201,17 @@ def plot_tf_history(history):
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
 
+def plot_tf_history_rg(history):
+    import matplotlib.pyplot as plt
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
+
 
 def classification_task_nn(X_train, X_test, y_train, y_test, history=None):
     import tensorflow as tf
@@ -221,3 +237,95 @@ def classification_task_nn(X_train, X_test, y_train, y_test, history=None):
     plot_tf_history(history)
     model.evaluate(X_test, y_test, verbose=2)
     return show_stats(model, X_train, X_test, y_train, y_test, argmax=True)
+
+
+def regression_task_nn(X_train, X_test, y_train, y_test, history=None):
+    import tensorflow as tf
+    # from tensorflow.keras.layers.experimental import preprocessing
+    # normalizer = preprocessing.Normalization()
+
+    # normalized = normalizer.adapt(np.array(X_train))
+    model = tf.keras.Sequential([
+    #   normalized,
+      tf.keras.layers.Dense(64, activation='relu', input_dim = X_train.shape[1]),
+      tf.keras.layers.Dense(64, activation='relu'), 
+      tf.keras.layers.Dense(1)
+  ])
+
+    model.compile(loss='mean_squared_error',
+                optimizer='adam',
+                metrics=['mean_absolute_error'])
+
+    history = model.fit(X_train,
+                        y_train,
+                        epochs=500,
+                        verbose=0,
+                        validation_data=(X_test, y_test))
+    plot_tf_history_rg(history)
+    train_loss = history.history['loss'][-1]
+    test_loss = model.evaluate(X_test, y_test, verbose=2)
+    return train_loss, test_loss
+
+def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
+    
+    rfr = Pipeline([
+        #("normalizer", Normalizer()),
+        ("rfr", RandomForestRegressor(n_estimators=100, random_state=7))
+        ])
+    parameters = {
+        'rfr__max_depth': [2,5,10,20],
+        'rfr__min_samples_split': [2,5],
+        'rfr__max_leaf_nodes': [5,10,20],
+        'rfr__min_samples_leaf': [2,5],
+        #'rfr__max_samples': [0.2,0.5,1],
+    }
+    greg = GridSearchCV(estimator = rfr, param_grid=parameters, cv=5, verbose=3)
+    greg.fit(X_train, y_train)
+    best_param = greg.best_params_
+    best_score = greg.best_score_
+    best_estim = greg.best_estimator_
+
+    print(best_param)
+    print(best_score)
+    print(best_estim)
+    print(X_train.shape)
+
+def lassoRegression(X_train, X_test, y_train, y_test, history=None):
+    from sklearn.linear_model import Lasso, LinearRegression
+    lasso = Pipeline([
+    ("lasso", Lasso(normalize = True, random_state=7))
+    ])
+    parameters = {
+        'lasso__alpha': [0.0001, 0.001,0.01, 0.1, 0.5, 0.7],
+    }
+    greg = GridSearchCV(estimator = lasso, param_grid=parameters, cv=5, verbose=3)
+    greg.fit(X_train, y_train)
+    best_param = greg.best_params_
+    best_score = greg.best_score_
+    best_estim = greg.best_estimator_
+
+    print(best_param)
+    print(best_score)
+    print(best_estim)
+    print(X_train.shape)
+
+def elasticNetRegression(X_train, X_test, y_train, y_test, history=None):
+    from sklearn.linear_model import ElasticNet
+    en = Pipeline([
+    ("en", ElasticNet(normalize = True, random_state=7))
+    ])
+    parameters = {
+        'en__alpha': [0.0001, 0.001,0.01, 0.1, 0.5, 1],
+        'en__l1_ratio':[0.2,0.5,0.8]
+    }
+    greg = GridSearchCV(estimator = en, param_grid=parameters, cv=5, verbose=3)
+    greg.fit(X_train, y_train)
+    best_param = greg.best_params_
+    best_score = greg.best_score_
+    best_estim = greg.best_estimator_
+
+    print(best_param)
+    print(best_score)
+    print(best_estim)
+    print(X_train.shape)
+

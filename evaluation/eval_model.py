@@ -1,10 +1,21 @@
 import json
 import argparse
 import os
+<<<<<<< HEAD
 import eval_utils as EU
 import numpy as np
 import pandas as pd
 from gensim.models import KeyedVectors
+=======
+import word2vec
+import visualizer as VS
+import eval_utils as EU
+import numpy as np
+import pandas as pd
+from gensim.models import Word2Vec, KeyedVectors
+import sys
+from sklearn.linear_model import Lasso, LinearRegression
+>>>>>>> 1d8ada0f62c3d966ee49a843cfe9b1c5cbbaf648
 from sklearn.model_selection import cross_val_score, train_test_split
 
 embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
@@ -34,9 +45,9 @@ def evaluate_task(args):
     full_table = pd.read_csv(os.path.join("../", location + target_file),
                              sep=',',
                              encoding='latin')
-
+   
     Y = full_table[target_column]
-    if args.task in ["kraken", "financial", "genes"]:
+    if args.task in ["kraken", "financial", "gene"]:
         Y = pd.Categorical(Y).codes
 
     # Set embeddings that are to be evaluated
@@ -73,7 +84,13 @@ def evaluate_task(args):
                                          model.vocab,
                                          model_dict=model_dict_path,
                                          model_type=method)
-            # EU.remove_hubness_and_run(x_vec_2dim, Y, n_neighbors=5)
+            print(x_vec_2dim.shape, Y.shape)
+            x_vec_2dim['Y'] = Y
+            x_vec_2dim = x_vec_2dim.fillna(0)
+            #x_vec_2dim = x_vec_2dim.dropna(axis=0, how='any')
+            Y = x_vec_2dim['Y']
+            x_vec_2dim =  x_vec_2dim.drop('Y', axis = 1)
+            print(x_vec_2dim.shape, Y.shape)
             tests = train_test_split(x_vec_2dim,
                                      Y,
                                      test_size=test_size,
@@ -92,6 +109,12 @@ def evaluate_task(args):
         # for n_estimators in [10, 50, 100]:
         #     classification_task(*tests_2dim, n_estimators=n_estimators)
 
+def simple_regression(X_train, X_test, y_train, y_test):
+    lr = LinearRegression()
+    lr.fit(X_train, y_train)
+    train_score = lr.score(X_train, y_train)
+    test_score = lr.score(X_test, y_test)
+    print("LR Train score: {}, Test score: {}".format(train_score, test_score))
 
 if __name__ == "__main__":
     print("Evaluating results with model:")
