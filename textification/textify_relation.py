@@ -23,7 +23,7 @@ def _read_rows_from_dataframe(df, columns, strategies):
             integer_strategy = strategies[c]
             cell_value = el[c]
 
-            if (cell_value == "\\N"):
+            if (cell_value == "\\N") or (cell_value == ""):
                 continue
             # We check the cell value is valid before continuing
             if not dpu.valid_cell(cell_value):
