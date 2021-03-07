@@ -1,8 +1,6 @@
 '''
 Reference implementation of node2vec.
-
 Author: Aditya Grover
-
 For more details, refer to the paper:
 node2vec: Scalable Feature Learning for Networks
 Aditya Grover and Jure Leskovec
@@ -121,3 +119,4 @@ def main(args):
 if __name__ == "__main__":
 	args = parse_args()
 	main(args)
+
