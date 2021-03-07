@@ -47,14 +47,13 @@ def evaluate_task(args):
     # Run through the embedding list and do evaluation
     for path in all_embeddings_path:
         if args.suffix != "" and args.suffix not in path: continue
-        if args.suffix == "" and "_" in path: continue 
         model = KeyedVectors.load_word2vec_format(path)
         table_name = path.split("/")[-1][:-4]
-        if "_sparse" in table_name or "_spectral" in table_name:
+        if "_sparse" in table_name or "_spectral" in table_name or "_restart" in table_name:
             table_name = "_".join(table_name.split("_")[:-1])
         model_dict_path = "../graph/{}/{}.dict".format(args.task, table_name)
-        print(model_dict_path)
-
+        print("dict:", model_dict_path)
+        print("emb path:", path)
         # Obtain textified & quantized data
         training_loss = []
         testing_loss = []
@@ -66,7 +65,8 @@ def evaluate_task(args):
                                 model_dict=model_dict_path,
                                 model_type=method)
 
-        for i in [5, 20, 50, 100, 200, 250]:
+        for i in [5, 20, 50, 100, 200]:
+            if model.vector_size < i: continue
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(df_textified,
                                          model_2dim,
@@ -78,6 +78,7 @@ def evaluate_task(args):
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
+            # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = table_name + "_" + str(i))
             train_loss, test_loss = EU.classification_task_logr(*tests) # nn(*tests, history_name = table_name + "_" + str(i))
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
@@ -102,7 +103,7 @@ if __name__ == "__main__":
                         help='task to be evaluated on')
     
     parser.add_argument('--suffix', type=str, default="", help='suffix of training experiment')
-    parser.add_argument('--method', type=str, help='method of training')
+    parser.add_argument('--method', type=str, default="node2vec", help='method of training')
 
     args = parser.parse_args()
 

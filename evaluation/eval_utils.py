@@ -51,7 +51,8 @@ def vectorize_df(df,
             for j in range(len(row)):
                 if cc.check(row[j]) in model_vocab:
                     x_vectorized[i] += list(model[cc.check(row[j])])
-    return pd.DataFrame(x_vectorized)
+    x_vectorized = pd.DataFrame(x_vectorized)
+    return x_vectorized
 
 
 def textify_df(df, strategies, path):

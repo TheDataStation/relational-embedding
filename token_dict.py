@@ -26,6 +26,9 @@ class TokenDict:
     def query_list(self, lst):
         return [self.query(x) for x in lst]
     
+    def check_list(self, lst):
+        return [self.check(x) for x in lst]
+    
     def save(self, output_path):
         f = open(output_path, "wb")
         pickle.dump(self.vocab, f)
