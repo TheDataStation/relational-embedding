@@ -24,6 +24,7 @@ def evaluate_task(args):
     config = data_config[args.task]
     location = config["location"]
     target_file = config["target_file"]
+    task_type = config["task_type"]
     location_processed = config["location_processed"]
     target_column = config["target_column"]
 
@@ -34,9 +35,8 @@ def evaluate_task(args):
     full_table = pd.read_csv(os.path.join("../", location + target_file),
                              sep=',',
                              encoding='latin')
-
     Y = full_table[target_column]
-    if args.task in ["kraken", "financial", "genes"]:
+    if task_type == "Classification":
         Y = pd.Categorical(Y).codes
 
     # Set embeddings that are to be evaluated
@@ -48,12 +48,13 @@ def evaluate_task(args):
     for path in all_embeddings_path:
         if args.suffix != "" and args.suffix not in path: continue
         model = KeyedVectors.load_word2vec_format(path)
-        table_name = path.split("/")[-1][:-4]
-        if "_sparse" in table_name or "_spectral" in table_name or "_restart" in table_name:
-            table_name = "_".join(table_name.split("_")[:-1])
-        model_dict_path = "../graph/{}/{}.dict".format(args.task, table_name)
-        print("dict:", model_dict_path)
-        print("emb path:", path)
+        emb_name = path.split("/")[-1][:-4]
+        if "_sparse" in emb_name or "_spectral" in emb_name or "_restart" in emb_name:
+            emb_name = "_".join(emb_name.split("_")[:-1])
+        model_dict_path = "../graph/{}/{}.dict".format(args.task, emb_name)
+
+        print("Evaluating: dict, ", model_dict_path)
+        print("emb path,", path)
         # Obtain textified & quantized data
         training_loss = []
         testing_loss = []
@@ -61,7 +62,7 @@ def evaluate_task(args):
                                      location_processed)
         x_vec = EU.vectorize_df(df_textified,
                                 model,
-                                model.vocab,
+                                file=location_processed.split("/")[-1],
                                 model_dict=model_dict_path,
                                 model_type=method)
 
@@ -70,7 +71,7 @@ def evaluate_task(args):
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(df_textified,
                                          model_2dim,
-                                         model.vocab,
+                                         file=location_processed.split("/")[-1],
                                          model_dict=model_dict_path,
                                          model_type=method)
             # EU.remove_hubness_and_run(x_vec_2dim, Y, n_neighbors=5)
@@ -78,8 +79,8 @@ def evaluate_task(args):
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
-            # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = table_name + "_" + str(i))
-            train_loss, test_loss = EU.classification_task_logr(*tests) # nn(*tests, history_name = table_name + "_" + str(i))
+            # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = emb_name + "_" + str(i))
+            train_loss, test_loss = EU.classification_task_logr(*tests) # nn(*tests, history_name = emb_name + "_" + str(i))
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
         print(training_loss)

@@ -84,8 +84,8 @@ def read_graph():
 	else:
 		G = nx.read_edgelist(args.input, nodetype=int, data=(('weight',float),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
 		# G = nx.read_edgelist(args.input, nodetype=int, create_using=nx.DiGraph(), delimiter=' ', comments = "?")
-		# for edge in G.edges():
-		# 	G[edge[0]][edge[1]]['weight'] = 1
+		for edge in G.edges():
+			G[edge[0]][edge[1]]['weight'] = 1
 	G = G.to_undirected()
 	return G
 
@@ -124,7 +124,7 @@ def main(args):
 	import pdb; pdb.set_trace()
 	cnts = pd.DataFrame(walks).stack().value_counts()
 	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
-	additional_walks = max(int(args.num_walks * 0.1), 8)
+	additional_walks = max(int(args.num_walks * 0.1), 4)
 	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
 	args.output = args.output[:-4] + "_restart.emb"
 

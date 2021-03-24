@@ -8,6 +8,7 @@ from textification import textify_relation as tr
 from relational_embedder.data_prep import data_prep_utils as dpu
 import numpy as np
 import pandas as pd
+from token_dict import TokenDict
 import csv
 
 
@@ -32,23 +33,22 @@ def get_PCA_for_embedding(model, ndim=2):
 
 def vectorize_df(df,
                  model,
-                 model_vocab=None,
+                 file="",
                  model_dict=None,
-                 model_type="word2vec"):
+                 model_type="nod2vec"):
     length = len(df)
     x_vectorized = [[] for i in range(length)]
+    file = file.split(".")[0]
+    cc = TokenDict()
+    cc.load(model_dict)
     if model_type == "node2vec" or model_type == "ProNE":
-        from token_dict import TokenDict
-        cc = TokenDict()
-        cc.load(model_dict)
         for i in range(length):
-            row = df[i]
-            x_vectorized[i] += list(model[cc.check("Classification_row:" +
+            x_vectorized[i] += list(model[cc.check(file + "_row:" +
                                                    str(i))])
+            # row = df[i]
             # for j in range(len(row)):
             #     if cc.check(row[j]) in model_vocab:
             #         x_vectorized[i] += list(model[cc.check(row[j])])
-    # import pdb; pdb.set_trace()
     return pd.DataFrame(x_vectorized)
 
 
