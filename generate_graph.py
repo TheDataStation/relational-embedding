@@ -32,6 +32,7 @@ def generate_graph(args):
         table_strategy = strategies[table_name]
         filename = "".join(table_name.split(".")[:-1])
         df = pd.read_csv(path, encoding='latin1', sep=',', low_memory=False)
+        #df.fillna(df.mode().iloc[0])
         columns = df.columns
         df = tr.quantize(df, table_strategy)
         # Add row edges

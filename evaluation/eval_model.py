@@ -1,3 +1,4 @@
+from sklearn.model_selection import cross_val_score, train_test_split
 import json
 import argparse
 import os
@@ -5,7 +6,11 @@ import eval_utils as EU
 import numpy as np
 import pandas as pd
 from gensim.models import KeyedVectors
-from sklearn.model_selection import cross_val_score, train_test_split
+import word2vec
+import visualizer as VS
+from gensim.models import Word2Vec, KeyedVectors
+import sys
+from sklearn.linear_model import Lasso, LinearRegression
 
 embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
 
@@ -35,6 +40,7 @@ def evaluate_task(args):
     full_table = pd.read_csv(os.path.join("../", location + target_file),
                              sep=',',
                              encoding='latin')
+
     Y = full_table[target_column]
     if task_type == "Classification":
         Y = pd.Categorical(Y).codes
@@ -71,16 +77,18 @@ def evaluate_task(args):
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(df_textified,
                                          model_2dim,
-                                         file=location_processed.split("/")[-1],
+                                         file=location_processed.split(
+                                             "/")[-1],
                                          model_dict=model_dict_path,
                                          model_type=method)
-            # EU.remove_hubness_and_run(x_vec_2dim, Y, n_neighbors=5)
+            x_vec_2dim = x_vec_2dim.fillna(0)
             tests = train_test_split(x_vec_2dim,
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
-            # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = emb_name + "_" + str(i))
-            train_loss, test_loss = EU.classification_task_logr(*tests) # nn(*tests, history_name = emb_name + "_" + str(i))
+            # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = table_name + "_" + str(i))
+            # nn(*tests, history_name = table_name + "_" + str(i))
+            train_loss, test_loss = EU.classification_task_logr(*tests)
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
         print(training_loss)
@@ -93,6 +101,12 @@ def evaluate_task(args):
         # for n_estimators in [10, 50, 100]:
         #     classification_task(*tests_2dim, n_estimators=n_estimators)
 
+def simple_regression(X_train, X_test, y_train, y_test):
+    lr = LinearRegression()
+    lr.fit(X_train, y_train)
+    train_score = lr.score(X_train, y_train)
+    test_score = lr.score(X_test, y_test)
+    print("LR Train score: {}, Test score: {}".format(train_score, test_score))
 
 if __name__ == "__main__":
     print("Evaluating results with model:")
@@ -104,7 +118,7 @@ if __name__ == "__main__":
                         help='task to be evaluated on')
     
     parser.add_argument('--suffix', type=str, default="", help='suffix of training experiment')
-    parser.add_argument('--method', type=str, help='method of training')
+    parser.add_argument('--method', type=str, default="node2vec", help='method of training')
 
     args = parser.parse_args()
 

@@ -1,15 +1,22 @@
 import sys
 sys.path.append('..')
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn import metrics
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import Normalizer
 from sklearn.metrics import accuracy_score, confusion_matrix
-import json
-from os import listdir, walk
-from os.path import isfile, join
-from textification import textify_relation as tr
-from relational_embedder.data_prep import data_prep_utils as dpu
-import numpy as np
-import pandas as pd
-from token_dict import TokenDict
 import csv
+from token_dict import TokenDict
+import pandas as pd
+import numpy as np
+from relational_embedder.data_prep import data_prep_utils as dpu
+from textification import textify_relation as tr
+from os.path import isfile, join
+from os import listdir, walk
+import json
+import tensorflow as tf
+
 
 
 def all_files_in_path(path, task):
@@ -73,7 +80,7 @@ def textify_df(df, strategies, path):
     return input
 
 
-def plot_token_distribution(walk_path, dict_path, fig_path = "walk_distri.png"):
+def plot_token_distribution(walk_path, dict_path, fig_path="walk_distri.png"):
     import matplotlib.pyplot as plt
     plt.clf()
     with open(walk_path, "r") as f:
@@ -93,24 +100,26 @@ def plot_token_distribution(walk_path, dict_path, fig_path = "walk_distri.png"):
     print(cnts.tail(10))
     return cnts
 
+
 def remove_nonrow_tokens(walk_path, dict_path):
     with open(walk_path, "r") as f:
         ls = f.readlines()
     ls = [x.split(" ")[:-1] for x in ls]
     from token_dict import TokenDict
     cc = TokenDict(dict_path)
-    
+
     lst = cc.get_all_tokens("_row:")
     print(len(ls), len(ls[0]))
     from tqdm import tqdm
-    res = [] 
-    # Graph is bipartite 
-    for row in tqdm(ls): 
-        if int(row[0]) in lst: 
+    res = []
+    # Graph is bipartite
+    for row in tqdm(ls):
+        if int(row[0]) in lst:
             res.append(row[::2])
         else:
             res.append(row[1::2])
     return res
+
 
 def remove_hubness_and_run(X, y, n_neighbors=15):
     from skhubness import Hubness
@@ -234,6 +243,17 @@ def plot_tf_history(history, history_name=None):
     plt.clf()
 
 
+def plot_tf_history_rg(history):
+    import matplotlib.pyplot as plt
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
+
 def classification_task_nn(X_train,
                            X_test,
                            y_train,
@@ -261,3 +281,98 @@ def classification_task_nn(X_train,
     plot_tf_history(history, history_name)
     model.evaluate(X_test, y_test, verbose=0)
     return show_stats(model, X_train, X_test, y_train, y_test, argmax=True)
+
+
+def regression_task_nn(X_train, X_test, y_train, y_test, history=None):
+    # from tensorflow.keras.layers.experimental import preprocessing
+    # normalizer = preprocessing.Normalization()
+
+    # normalized = normalizer.adapt(np.array(X_train))
+    model = tf.keras.Sequential([
+        #   normalized,
+        tf.keras.layers.Dense(64, activation='relu',
+                              input_dim=X_train.shape[1]),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(1)
+    ])
+
+    model.compile(loss='mean_squared_error',
+                  optimizer='adam',
+                  metrics=['mean_absolute_error'])
+
+    history = model.fit(X_train,
+                        y_train,
+                        epochs=500,
+                        verbose=0,
+                        validation_data=(X_test, y_test))
+    plot_tf_history_rg(history)
+    train_loss = history.history['loss'][-1]
+    test_loss = model.evaluate(X_test, y_test, verbose=2)
+    return train_loss, test_loss
+
+
+def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
+
+    rfr = Pipeline([
+        #("normalizer", Normalizer()),
+        ("rfr", RandomForestRegressor(n_estimators=100, random_state=7))
+    ])
+    parameters = {
+        'rfr__max_depth': [2, 5, 10, 20],
+        'rfr__min_samples_split': [2, 5],
+        'rfr__max_leaf_nodes': [5, 10, 20],
+        'rfr__min_samples_leaf': [2, 5],
+        # 'rfr__max_samples': [0.2,0.5,1],
+    }
+    greg = GridSearchCV(estimator=rfr, param_grid=parameters, cv=5, verbose=3)
+    greg.fit(X_train, y_train)
+    best_param = greg.best_params_
+    best_score = greg.best_score_
+    best_estim = greg.best_estimator_
+
+    print(best_param)
+    print(best_score)
+    print(best_estim)
+    print(X_train.shape)
+
+
+def lassoRegression(X_train, X_test, y_train, y_test, history=None):
+    from sklearn.linear_model import Lasso, LinearRegression
+    lasso = Pipeline([
+        ("lasso", Lasso(normalize=True, random_state=7))
+    ])
+    parameters = {
+        'lasso__alpha': [0.0001, 0.001, 0.01, 0.1, 0.5, 0.7],
+    }
+    greg = GridSearchCV(
+        estimator=lasso, param_grid=parameters, cv=5, verbose=3)
+    greg.fit(X_train, y_train)
+    best_param = greg.best_params_
+    best_score = greg.best_score_
+    best_estim = greg.best_estimator_
+
+    print(best_param)
+    print(best_score)
+    print(best_estim)
+    print(X_train.shape)
+
+
+def elasticNetRegression(X_train, X_test, y_train, y_test, history=None):
+    from sklearn.linear_model import ElasticNet
+    en = Pipeline([
+        ("en", ElasticNet(normalize=True, random_state=7))
+    ])
+    parameters = {
+        'en__alpha': [0.0001, 0.001, 0.01, 0.1, 0.5, 1],
+        'en__l1_ratio': [0.2, 0.5, 0.8]
+    }
+    greg = GridSearchCV(estimator=en, param_grid=parameters, cv=5, verbose=3)
+    greg.fit(X_train, y_train)
+    best_param = greg.best_params_
+    best_score = greg.best_score_
+    best_estim = greg.best_estimator_
+
+    print(best_param)
+    print(best_score)
+    print(best_estim)
+    print(X_train.shape)

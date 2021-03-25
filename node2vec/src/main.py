@@ -1,8 +1,6 @@
 '''
 Reference implementation of node2vec.
-
 Author: Aditya Grover
-
 For more details, refer to the paper:
 node2vec: Scalable Feature Learning for Networks
 Aditya Grover and Jure Leskovec
@@ -12,6 +10,8 @@ Knowledge Discovery and Data Mining (KDD), 2016
 import argparse
 import numpy as np
 import networkx as nx
+import pandas as pd 
+from collections import defaultdict
 import node2vec
 from gensim.models import Word2Vec
 
@@ -41,7 +41,7 @@ def parse_args():
 	parser.add_argument('--dimensions', type=int, default=50,
 	                    help='Number of dimensions. Default is 150.')
 
-	parser.add_argument('--walk-length', type=int, default=160,
+	parser.add_argument('--walk-length', type=int, default=80,
 	                    help='Length of walk per source. Default is 80.')
 
 	parser.add_argument('--num-walks', type=int, default=10,
@@ -119,12 +119,11 @@ def main(args):
 
 	learn_embeddings(walks)
 
-	import pandas as pd 
-	from collections import defaultdict
 	import pdb; pdb.set_trace()
 	cnts = pd.DataFrame(walks).stack().value_counts()
 	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
 	additional_walks = max(int(args.num_walks * 0.1), 4)
+	print(additional_walks)
 	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
 	args.output = args.output[:-4] + "_restart.emb"
 
@@ -139,3 +138,4 @@ def main(args):
 if __name__ == "__main__":
 	args = parse_args()
 	main(args)
+
