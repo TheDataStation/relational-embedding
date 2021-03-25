@@ -4,6 +4,7 @@ import argparse
 import json
 from collections import defaultdict 
 from os import listdir
+from pathlib import Path
 from os.path import isfile, join
 
 def all_files_in_path(path):
@@ -72,6 +73,9 @@ def task_loader(args):
     
     with open("./data/strategies/" + args.task + ".txt", "w") as json_file:
         json.dump(strategies, json_file, indent=4)
+    
+    dbdir = Path.cwd() / "graph" / args.task
+    dbdir.mkdir(parents=True, exist_ok=True)
             
 
 

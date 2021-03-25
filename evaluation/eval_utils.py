@@ -2,10 +2,10 @@ import sys
 sys.path.append('..')
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
-from sklearn import metrics
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import Normalizer
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.linear_model import Lasso, LinearRegression, ElasticNet
+from sklearn.metrics import accuracy_score, confusion_matrix, r2_score, mean_absolute_error
 import csv
 from token_dict import TokenDict
 import pandas as pd
@@ -184,14 +184,14 @@ def parse_strategy(s):
 ###################################################################
 
 
-def show_stats(model, X_train, X_test, y_train, y_test, argmax=False):
+def show_stats(model, X_train, X_test, y_train, y_test, argmax=False, metric=accuracy_score):
     X_pred_train = model.predict(X_train)
     X_pred_test = model.predict(X_test)
     if argmax == True:
         X_pred_train = np.argmax(X_pred_train, axis=1)
         X_pred_test = np.argmax(X_pred_test, axis=1)
-    pscore_train = accuracy_score(y_train, X_pred_train)
-    pscore_test = accuracy_score(y_test, X_pred_test)
+    pscore_train = metric(y_train, X_pred_train)
+    pscore_test = metric(y_test, X_pred_test)
     # print("Confusion Matrix:", confusion_matrix(y_test, X_pred_test))
     print("Train accuracy {}, Test accuracy {}".format(pscore_train,
                                                        pscore_test))
@@ -243,7 +243,7 @@ def plot_tf_history(history, history_name=None):
     plt.clf()
 
 
-def plot_tf_history_rg(history):
+def plot_tf_history_rg(history, history_name=None):
     import matplotlib.pyplot as plt
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -251,7 +251,11 @@ def plot_tf_history_rg(history):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
+    if history_name is None:
+        plt.show()
+    else:
+        plt.savefig(history_name + "loss.png")
+    plt.clf()
 
 
 def classification_task_nn(X_train,
@@ -283,7 +287,7 @@ def classification_task_nn(X_train,
     return show_stats(model, X_train, X_test, y_train, y_test, argmax=True)
 
 
-def regression_task_nn(X_train, X_test, y_train, y_test, history=None):
+def regression_task_nn(X_train, X_test, y_train, y_test, history_name=None):
     # from tensorflow.keras.layers.experimental import preprocessing
     # normalizer = preprocessing.Normalization()
 
@@ -302,19 +306,18 @@ def regression_task_nn(X_train, X_test, y_train, y_test, history=None):
 
     history = model.fit(X_train,
                         y_train,
-                        epochs=500,
+                        epochs=120,
                         verbose=0,
                         validation_data=(X_test, y_test))
-    plot_tf_history_rg(history)
+    plot_tf_history_rg(history, history_name = history_name)
     train_loss = history.history['loss'][-1]
     test_loss = model.evaluate(X_test, y_test, verbose=2)
-    return train_loss, test_loss
+    return show_stats(model, X_train, X_test, y_train, y_test, argmax=True, metric=r2_score)
 
 
 def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
-
     rfr = Pipeline([
-        #("normalizer", Normalizer()),
+        ("normalizer", Normalizer()),
         ("rfr", RandomForestRegressor(n_estimators=100, random_state=7))
     ])
     parameters = {
@@ -324,20 +327,12 @@ def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
         'rfr__min_samples_leaf': [2, 5],
         # 'rfr__max_samples': [0.2,0.5,1],
     }
-    greg = GridSearchCV(estimator=rfr, param_grid=parameters, cv=5, verbose=3)
+    greg = GridSearchCV(estimator=rfr, param_grid=parameters, cv=5, verbose=0)
     greg.fit(X_train, y_train)
-    best_param = greg.best_params_
-    best_score = greg.best_score_
-    best_estim = greg.best_estimator_
-
-    print(best_param)
-    print(best_score)
-    print(best_estim)
-    print(X_train.shape)
+    return show_stats(greg, X_train, X_test, y_train, y_test, metric=r2_score)
 
 
 def lassoRegression(X_train, X_test, y_train, y_test, history=None):
-    from sklearn.linear_model import Lasso, LinearRegression
     lasso = Pipeline([
         ("lasso", Lasso(normalize=True, random_state=7))
     ])
@@ -345,20 +340,12 @@ def lassoRegression(X_train, X_test, y_train, y_test, history=None):
         'lasso__alpha': [0.0001, 0.001, 0.01, 0.1, 0.5, 0.7],
     }
     greg = GridSearchCV(
-        estimator=lasso, param_grid=parameters, cv=5, verbose=3)
+        estimator=lasso, param_grid=parameters, cv=5, verbose=0)
     greg.fit(X_train, y_train)
-    best_param = greg.best_params_
-    best_score = greg.best_score_
-    best_estim = greg.best_estimator_
-
-    print(best_param)
-    print(best_score)
-    print(best_estim)
-    print(X_train.shape)
+    return show_stats(greg, X_train, X_test, y_train, y_test, metric=r2_score)
 
 
 def elasticNetRegression(X_train, X_test, y_train, y_test, history=None):
-    from sklearn.linear_model import ElasticNet
     en = Pipeline([
         ("en", ElasticNet(normalize=True, random_state=7))
     ])
@@ -366,13 +353,6 @@ def elasticNetRegression(X_train, X_test, y_train, y_test, history=None):
         'en__alpha': [0.0001, 0.001, 0.01, 0.1, 0.5, 1],
         'en__l1_ratio': [0.2, 0.5, 0.8]
     }
-    greg = GridSearchCV(estimator=en, param_grid=parameters, cv=5, verbose=3)
+    greg = GridSearchCV(estimator=en, param_grid=parameters, cv=5, verbose=0)
     greg.fit(X_train, y_train)
-    best_param = greg.best_params_
-    best_score = greg.best_score_
-    best_estim = greg.best_estimator_
-
-    print(best_param)
-    print(best_score)
-    print(best_estim)
-    print(X_train.shape)
+    return show_stats(greg, X_train, X_test, y_train, y_test, metric=r2_score)

@@ -72,7 +72,7 @@ def evaluate_task(args):
                                 model_dict=model_dict_path,
                                 model_type=method)
 
-        for i in [5, 20, 50, 100, 200]:
+        for i in [5, 20, 50, 100, 150]:
             if model.vector_size < i: continue
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(df_textified,
@@ -86,20 +86,21 @@ def evaluate_task(args):
                                      Y,
                                      test_size=test_size,
                                      random_state=10)
-            # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = table_name + "_" + str(i))
-            # nn(*tests, history_name = table_name + "_" + str(i))
-            train_loss, test_loss = EU.classification_task_logr(*tests)
+            
+            if task_type == "Classification":
+                # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = emb_name + "_" + str(i))
+                train_loss, test_loss = EU.classification_task_logr(*tests)
+            else:
+                # train_loss, test_loss = EU.regression_task_nn(*tests, history_name = emb_name + "_" + str(i))
+                # print(train_loss, test_loss)
+                train_loss, test_loss = EU.lassoRegression(*tests)
+                train_loss, test_loss = EU.randomForestRegression(*tests)
+                train_loss, test_loss = EU.elasticNetRegression(*tests)
+                # print(train_loss, test_loss)
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
         print(training_loss)
         print(testing_loss)
-        # tests_2dim = train_test_split(x_vec_2dim, Y, test_size=test_size, random_state=10)
-        # print("{}_dim:".format(model.vector_size))
-        # for n_estimators in [10, 50, 100]:
-        #     classification_task(*tests, n_estimators=n_estimators)
-        # print("2_dim:")
-        # for n_estimators in [10, 50, 100]:
-        #     classification_task(*tests_2dim, n_estimators=n_estimators)
 
 def simple_regression(X_train, X_test, y_train, y_test):
     lr = LinearRegression()

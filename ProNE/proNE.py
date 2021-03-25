@@ -21,8 +21,7 @@ class ProNE():
         self.emb2 = emb_file2
         self.dimension = dimension
 
-        self.G = nx.read_edgelist(
-            self.graph, nodetype=int, create_using=nx.DiGraph())
+        self.G = nx.read_edgelist(self.graph, nodetype=int, data=(('weight',float),), create_using=nx.DiGraph(), delimiter=' ', comments = "?")
         self.G = self.G.to_undirected()
         self.node_number = self.G.number_of_nodes()
         matrix0 = scipy.sparse.lil_matrix((self.node_number, self.node_number))
@@ -40,8 +39,6 @@ class ProNE():
         l = matrix.shape[0]
         smat = scipy.sparse.csc_matrix(matrix)  # convert to sparse CSC format
         print('svd sparse', smat.data.shape[0] * 1.0 / l ** 2)
-        import pdb
-        pdb.set_trace()
         U, Sigma, VT = randomized_svd(
             smat, n_components=self.dimension, n_iter=3, random_state=None)
         U = U * np.sqrt(Sigma)
@@ -148,7 +145,7 @@ def parse_args():
     parser.add_argument('--emb1', nargs='?', default='emb/blogcatalog.emb')
     parser.add_argument('--emb2', nargs='?',
                         default='emb/blogcatalog_enhanced.emb')
-    parser.add_argument('--dimension', type=int, default=100,
+    parser.add_argument('--dimension', type=int, default=50,
                         help='Number of dimensions. Default is 128.')
     parser.add_argument('--step', type=int, default=10,
                         help='Step of recursion. Default is 10.')

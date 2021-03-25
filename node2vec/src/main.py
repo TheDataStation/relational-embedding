@@ -39,7 +39,7 @@ def parse_args():
 	                    help='Embeddings path')
 
 	parser.add_argument('--dimensions', type=int, default=50,
-	                    help='Number of dimensions. Default is 150.')
+	                    help='Number of dimensions. Default is 50.')
 
 	parser.add_argument('--walk-length', type=int, default=80,
 	                    help='Length of walk per source. Default is 80.')
@@ -53,7 +53,7 @@ def parse_args():
 	parser.add_argument('--iter', default=15, type=int,
                       help='Number of epochs in SGD')
 
-	parser.add_argument('--workers', type=int, default=16,
+	parser.add_argument('--workers', type=int, default=8,
 	                    help='Number of parallel workers. Default is 8.')
 
 	parser.add_argument('--p', type=float, default=1,
@@ -110,7 +110,6 @@ def main(args):
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
 	print("Walking Done!")
-	import pdb; pdb.set_trace()
 	walks_save_path = "walks/" + args.input.split("/")[-1] + "_160.txt"
 	with open(walks_save_path, 'w') as f:
 		for walk in walks: 
@@ -119,11 +118,10 @@ def main(args):
 
 	learn_embeddings(walks)
 
-	import pdb; pdb.set_trace()
 	cnts = pd.DataFrame(walks).stack().value_counts()
 	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
 	additional_walks = max(int(args.num_walks * 0.1), 4)
-	print(additional_walks)
+	print("additional walks", additional_walks)
 	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
 	args.output = args.output[:-4] + "_restart.emb"
 

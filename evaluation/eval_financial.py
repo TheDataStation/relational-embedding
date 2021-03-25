@@ -23,16 +23,11 @@ def all_files_in_path(path):
     fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
     return fs
 
-def join_tables_kraken(df):
-    #TODO 
-    return df
-
 def simple_random_forest(X_train, X_test, y_train, y_test):
     rf = RandomForestClassifier(n_estimators = 200)
     rf.fit(X_train, y_train)
     y_pred = rf.predict(X_test)
     pscore = accuracy_score(y_test, y_pred)
-    import pdb; pdb.set_trace();
     print("RF Test score:", pscore)
 
 def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test):
