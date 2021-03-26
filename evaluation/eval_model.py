@@ -42,7 +42,7 @@ def evaluate_task(args):
                              encoding='latin')
 
     Y = full_table[target_column]
-    if task_type == "Classification":
+    if task_type == "classification":
         Y = pd.Categorical(Y).codes
 
     # Set embeddings that are to be evaluated
@@ -71,7 +71,6 @@ def evaluate_task(args):
                                 file=location_processed.split("/")[-1],
                                 model_dict=model_dict_path,
                                 model_type=method)
-
         for i in [5, 20, 50, 100, 150]:
             if model.vector_size < i: continue
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
@@ -87,9 +86,9 @@ def evaluate_task(args):
                                      test_size=test_size,
                                      random_state=10)
             
-            if task_type == "Classification":
-                # train_loss, test_loss = EU.classification_task_nn(*tests, history_name = emb_name + "_" + str(i))
-                train_loss, test_loss = EU.classification_task_logr(*tests)
+            if task_type == "classification":
+                train_loss, test_loss = EU.classification_task_nn(*tests, history_name = emb_name + "_" + str(i))
+                # train_loss, test_loss = EU.classification_task_logr(*tests)
             else:
                 # train_loss, test_loss = EU.regression_task_nn(*tests, history_name = emb_name + "_" + str(i))
                 # print(train_loss, test_loss)
