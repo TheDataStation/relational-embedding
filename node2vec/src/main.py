@@ -14,6 +14,7 @@ import pandas as pd
 from collections import defaultdict
 import node2vec
 from gensim.models import Word2Vec
+from random import random 
 
 
 def parse_args():
@@ -41,19 +42,19 @@ def parse_args():
 	parser.add_argument('--dimensions', type=int, default=50,
 	                    help='Number of dimensions. Default is 50.')
 
-	parser.add_argument('--walk-length', type=int, default=80,
+	parser.add_argument('--walk-length', type=int, default=40,
 	                    help='Length of walk per source. Default is 80.')
 
 	parser.add_argument('--num-walks', type=int, default=10,
 	                    help='Number of walks per source. Default is 10.')
 
-	parser.add_argument('--window-size', type=int, default=10,
+	parser.add_argument('--window-size', type=int, default=5,
                     	help='Context size for optimization. Default is 10.')
 
-	parser.add_argument('--iter', default=15, type=int,
+	parser.add_argument('--iter', default=10, type=int,
                       help='Number of epochs in SGD')
 
-	parser.add_argument('--workers', type=int, default=8,
+	parser.add_argument('--workers', type=int, default=16,
 	                    help='Number of parallel workers. Default is 8.')
 
 	parser.add_argument('--p', type=float, default=1,
@@ -110,7 +111,7 @@ def main(args):
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
 	print("Walking Done!")
-	walks_save_path = "walks/" + args.input.split("/")[-1] + "_160.txt"
+	walks_save_path = "walks/" + args.input.split("/")[-1] + "_" +  ".txt" 
 	with open(walks_save_path, 'w') as f:
 		for walk in walks: 
 			f.writelines("%s " % place for place in walk)
@@ -118,20 +119,20 @@ def main(args):
 
 	learn_embeddings(walks)
 
-	cnts = pd.DataFrame(walks).stack().value_counts()
-	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
-	additional_walks = max(int(args.num_walks * 0.1), 4)
-	print("additional walks", additional_walks)
-	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
-	args.output = args.output[:-4] + "_restart.emb"
+	# cnts = pd.DataFrame(walks).stack().value_counts()
+	# restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
+	# additional_walks = max(int(args.num_walks * 0.1), 4)
+	# print("additional walks", additional_walks)
+	# restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
+	# args.output = args.output[:-4] + "_restart.emb"
 
-	walks_save_path = "walks/" + args.input.split("/")[-1] + "_restart.txt"
-	new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
-	with open(walks_save_path, 'w') as f:
-		for walk in new_walks: 
-			f.writelines("%s " % place for place in walk)
-			f.writelines("\n")
-	learn_embeddings(new_walks)
+	# walks_save_path = "walks/" + args.input.split("/")[-1] + "_restart.txt"
+	# new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
+	# with open(walks_save_path, 'w') as f:
+	# 	for walk in new_walks: 
+	# 		f.writelines("%s " % place for place in walk)
+	# 		f.writelines("\n")
+	# learn_embeddings(new_walks)
 
 if __name__ == "__main__":
 	args = parse_args()

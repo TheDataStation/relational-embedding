@@ -12,13 +12,15 @@ from token_dict import TokenDict
 num_threshold = 5000
 distinct_threshold = 5
 
+
 def clean_edges(record_dict):
-    links = pd.DataFrame(record_dict.items())
-    links['num'] = links[1].apply(len)
-    links['distinct_num'] = links[1].apply(
+    links = pd.DataFrame(record_dict.items(), columns=["token", "lst"])
+    links['num'] = links["lst"].apply(len)
+    links['distinct_num'] = links["lst"].apply(
         lambda x: len(set(map(lambda y: y.split("_")[0], x)))
     )
-    links = links[(links["num"] < num_threshold) & (links['distinct_num'] < distinct_threshold)]
+    links = links[(links["num"] != 1) & (links["num"] < num_threshold) & (
+        links['distinct_num'] < distinct_threshold)]
     return links
 
 
@@ -59,15 +61,15 @@ def generate_graph(args):
                     record_dict[value].append(row_name)
 
     record_dict = clean_edges(record_dict)
-    for (token, lst) in record_dict.items():
-        if len(lst) <= 5000:
-            for row in lst:
-                edges.add((token, row, 1 / len(lst)))
+    for index, row in record_dict.iterrows():
+        token, lst = row["token"], row["lst"]
+        for row_id in lst:
+            edges.add((token, row_id, 1.0 / len(lst)))
     # Save output graph and dictionary
     cc = TokenDict()
     with open(output_graph_path, "w") as f:
         for node_x, node_y, weight in iter(edges):
-            decoded_x, decoded_y = cc.get(node_x), cc.get(node_y)
+            decoded_x, decoded_y = cc.put(node_x), cc.put(node_y)
             f.write("{} {} {}\n".format(decoded_x, decoded_y, weight))
     cc.save(output_dictionary_path)
     print("Saved {} edges under{}".format(len(edges), output_graph_path))

@@ -50,7 +50,7 @@ def task_loader(args):
             integer_strategy, grain_strategy = "augment", "cell"
             num_distinct_numericals = df[col].nunique()
 
-            if df[col].dtype in [np.float, np.float16, np.float32, np.float64]:
+            if "id" not in col and df[col].dtype in [np.float, np.float16, np.float32, np.float64]:
                 if abs(df[col].skew()) >= 2: 
                     integer_strategy = "eqw_quantize"
                 else:

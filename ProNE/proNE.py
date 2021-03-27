@@ -31,7 +31,6 @@ class ProNE():
                 matrix0[e[0], e[1]] = 1
                 matrix0[e[1], e[0]] = 1
         self.matrix0 = scipy.sparse.csr_matrix(matrix0)
-        print(matrix0.shape)
 
     def get_embedding_rand(self, matrix):
         # Sparse randomized tSVD for fast embedding

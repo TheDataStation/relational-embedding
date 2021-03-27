@@ -6,6 +6,9 @@ import argparse
 
 import gensim
 from gensim import utils
+from tqdm import tqdm
+from token_dict import TokenDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,19 +16,21 @@ logger = logging.getLogger(__name__)
 def word2vec2tensor(task, suffix, binary=False):
     suffix = "" if suffix == "" else "_" + suffix
     word2vec_model_path = "./{}{}.emb".format(task, suffix)
-    dictionary_path = "../../graph/{}/{}{}.dict".format(task, task, suffix)
     tensor_path = "./{}{}".format(task, suffix)
     outfiletsv = tensor_path + '_tensor.tsv'
     outfiletsvmeta = tensor_path + '_metadata.tsv'
-
-    model = gensim.models.KeyedVectors.load_word2vec_format(word2vec_model_path, binary=binary)
-    from token_dict import TokenDict
+    
+    if "_sparse" in suffix or "_spectral" in suffix or "_restart" in suffix:
+        suffix = "" 
+    dictionary_path = "../../graph/{}/{}{}.dict".format(task, task, suffix)
     cc = TokenDict()
     cc.load(dictionary_path)
+    model = gensim.models.KeyedVectors.load_word2vec_format(word2vec_model_path, binary=binary)
+    logger.info("Dictionary and Model Loaded")
     
     with utils.open(outfiletsv, 'wb') as file_vector, utils.open(outfiletsvmeta, 'wb') as file_metadata:
-        for word in model.index2word:
-            word_meta = str(cc.query(int(word)))
+        for word in tqdm(model.index2word):
+            word_meta = cc.getTokenForNum(word)
             file_metadata.write(gensim.utils.to_utf8(word_meta) + gensim.utils.to_utf8('\n'))
             vector_row = '\t'.join(str(x) for x in model[word])
             file_vector.write(gensim.utils.to_utf8(vector_row) + gensim.utils.to_utf8('\n'))

@@ -42,20 +42,20 @@ def vectorize_df(df,
                  model,
                  file="",
                  model_dict=None,
-                 model_type="nod2vec"):
+                 model_type="node2vec"):
     length = len(df)
     x_vectorized = [[] for i in range(length)]
     file = file.split(".")[0]
     cc = TokenDict()
-    cc.load(model_dict)
+    cc.load(model_dict)    
     if model_type == "node2vec" or model_type == "ProNE":
         for i in range(length):
-            x_vectorized[i] += list(model[cc.check(file + "_row:" +
-                                                   str(i))])
+            token_row = file + "_row:" + str(i)
+            x_vectorized[i] += list(model[cc.getNumForToken(token_row)])
             # row = df[i]
             # for j in range(len(row)):
-            #     if cc.check(row[j]) in model_vocab:
-            #         x_vectorized[i] += list(model[cc.check(row[j])])
+            #     if cc.getNumForToken(row[j]) in model_vocab:
+            #         x_vectorized[i] += list(model[cc.getNumForToken(row[j])])
     return pd.DataFrame(x_vectorized)
 
 
@@ -90,10 +90,9 @@ def plot_token_distribution(walk_path, dict_path, fig_path="walk_distri.png"):
     cnts.hist(range=(0, 1500))
     plt.savefig(fig_path)
 
-    from token_dict import TokenDict
     cc = TokenDict(dict_path)
     cnts = pd.DataFrame({"cnts": cnts})
-    cnts["token"] = cnts.apply(lambda x: cc.query(int(x.name)), axis=1)
+    cnts["token"] = cnts.apply(lambda x: cc.getTokenForNum(x.name), axis=1)
     print("Top 10 Most Freq tokens")
     print(cnts.head(10))
     print("Top 10 Least Freq tokens")
@@ -105,10 +104,9 @@ def remove_nonrow_tokens(walk_path, dict_path):
     with open(walk_path, "r") as f:
         ls = f.readlines()
     ls = [x.split(" ")[:-1] for x in ls]
-    from token_dict import TokenDict
     cc = TokenDict(dict_path)
 
-    lst = cc.get_all_tokens("_row:")
+    lst = cc.getAllTokensWith("_row:")
     print(len(ls), len(ls[0]))
     from tqdm import tqdm
     res = []
