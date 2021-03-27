@@ -59,7 +59,6 @@ def generate_graph(args):
                 for row in decoded_row:
                     row_name = "{}_row:{}".format(filename, row)
                     record_dict[value].append(row_name)
-
     record_dict = clean_edges(record_dict)
     for index, row in record_dict.iterrows():
         token, lst = row["token"], row["lst"]
