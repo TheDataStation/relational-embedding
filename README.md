@@ -21,10 +21,19 @@ We train the embedding in an unsupervised fashion through the following 5-stage 
 
 All of the following used default parameters that could be altered at the user's distinction. 
 
-To set up the environment, run:
+## Setup 
+To setup the environment, run, 
 ```
 pip install -r requirements.txt
 ```  
+
+The Python version we are using is 3.6.13 and pip version is 21.0.1.
+
+Before running the pipeline on a specific dataset (for example, the sample dataset we are providing), please create the following folders: 
+
+- Under **data/**, create **strategies/**. This folder would save json files about how tables are textified into tokens when you run preprocess.py. 
+- Under **node2vec/** and **ProNE/**, create **emb/**. These folders would store embeddings generated from the two different methods. 
+- Create **graph/**, and a subfolder under **graph/** with the name of the dataset. This folder would contain dictionary mappings and edgelist files. 
 
 ## Dataset Preprocessing
 In this stage, we fill relevant dataset information in **data/data_config.txt** and indicate the base table \ columns that we are interested in using for the downstream task. At the same time, we determine the strategies we will be using for each attribute and saved them under **strategies/**.
