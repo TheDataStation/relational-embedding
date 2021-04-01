@@ -29,11 +29,18 @@ pip install -r requirements.txt
 
 The Python version we are using is 3.6.13 and pip version is 21.0.1.
 
-Before running the pipeline on a specific dataset (for example, the sample dataset we are providing), please create the following folders: 
+Before running the pipeline on a specific dataset (for example, the sample dataset we are providing), please make sure the following folders are created: 
 
-- Under **data/**, create **strategies/**. This folder would save json files about how tables are textified into tokens when you run preprocess.py. 
+- Under **data/**, create **strategies/**. This folder would save json files about how tables are textified into tokens when you run data/preprocess.py. 
 - Under **node2vec/** and **ProNE/**, create **emb/**. These folders would store embeddings generated from the two different methods. 
-- Create **graph/**, and a subfolder under **graph/** with the name of the dataset. This folder would contain dictionary mappings and edgelist files. 
+- Create **graph/**, and a subfolder under **graph/** with the name of the dataset. This folder would contain dictionary mappings and edgelist files.
+- Under **node2vec/**, create a folder named **walks/**, this folder saves the random walks generated in the training process. 
+
+To run the pipeline over your dataset, please add relevant information in data/data_config.txt. 
+
+## Sample Dataset 
+The synthetic sample dataset we provide is used as a motivating example to show that embedding is beneficial for boosting downstream model performance. There are mainly three groups of students, type 1, type 2 and type 3. Each group corresponds to transactions of a particular items. The goal is to predict the "money" attribute in the base table. The embedding plot we included below shows that the embedding method correctly clusters all the students into 3 large categories. 
+
 
 ## Dataset Preprocessing
 In this stage, we fill relevant dataset information in **data/data_config.txt** and indicate the base table \ columns that we are interested in using for the downstream task. At the same time, we determine the strategies we will be using for each attribute and saved them under **strategies/**.
@@ -56,17 +63,18 @@ We provide two embedding training methods on the graph created from above, one b
 
 ```
 cd node2vec/ 
-python src/main.py --task sample 
+python src/main.py --task sample --dimensions 10
 ```
  
  The factorization-method based one is done by calling: 
  ```
  cd ProNE/ 
-python proNE.py --task sample 
+python proNE.py --task sample --dimensions 10
  ```
 
-Generated embedding and walks would be saved in the corresponding **emb/** folder. For the random-walk-based method, we observe due to the connectivity of the graph, some nodes are worse represented than other nodes, and adding limits on how many times walks can visit one node is beneficial for both embedding quality and downstream model performance. The embedding is suffixed with **_restart** under the same model name. 
-  
+Note that our sample dataset is very small and is just used for motivating example, larger dimensions should be used on larger datasets. 
+
+Generated embedding and walks would be saved in the corresponding **emb/** folder. For the random-walk-based method, we observe due to the connectivity of the graph, some nodes are worse represented than other nodes, and adding limits on how many times walks can visit one node is beneficial for both embedding quality and downstream model performance. The embedding is suffixed with **_restart** under the same model name. The matrix factorization method generates two embeddings, one suffixed with **_sparse** and one with **_spectral** under the same model name. Embeddings generated are saved under the corresponding **emb/** folder. 
 
 ## Embedding Enhancement (Optional and Ongoing) 
 Since we already have the representation of the relational data in the form of embeddings, we could find analogies of feature engineering techniques in the embedding space. Here are some ideas that we are exploring: 
@@ -82,3 +90,7 @@ python eval_model.py --task sample
 ```
 
 It's possible to change the downstream task by altering the evaluation function to be other functions offered in **eval_util**.
+
+## Visualizing embedding 
+**convert_emb_to_tsv.py** is a useful tool to convert embeddings from w2v format to tsv format. The tsv format embedding could be plotted in tensorflow projector. Here is a plot of the node2vec embedding for the sample dataset. 
+![Sample](Background-ex.png)

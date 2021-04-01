@@ -144,7 +144,7 @@ def parse_args():
     parser.add_argument('--emb1', nargs='?', default='emb/blogcatalog.emb')
     parser.add_argument('--emb2', nargs='?',
                         default='emb/blogcatalog_enhanced.emb')
-    parser.add_argument('--dimension', type=int, default=50,
+    parser.add_argument('--dimensions', type=int, default=50,
                         help='Number of dimensions.')
     parser.add_argument('--step', type=int, default=10,
                         help='Step of recursion. Default is 10.')
