@@ -17,7 +17,7 @@ We train the embedding in an unsupervised fashion through the following 5-stage 
 - Embedding Training 
 - Feeding Embedding to Downstream ML task 
 
-![System Pipeline](Sys-pipeline.png)
+![System Pipeline](pics/Sys-pipeline.png)
 
 All of the following used default parameters that could be altered at the user's distinction. 
 
@@ -86,11 +86,12 @@ Since we already have the representation of the relational data in the form of e
 We trained embeddings for row nodes and value nodes that are shared across multiple rows. Therefore, when feeding into downstream models, we also have the option to feed only use the rows / shared values. The default is to use only the row embeddings.
 
 ```
+cd evaluation/
 python eval_model.py --task sample 
 ```
 
-It's possible to change the downstream task by altering the evaluation function to be other functions offered in **eval_util**.
+It's possible to change the downstream task by altering the evaluation function to be other functions offered in **eval_util.py**.
 
 ## Visualizing embedding 
 **convert_emb_to_tsv.py** is a useful tool to convert embeddings from w2v format to tsv format. The tsv format embedding could be plotted in tensorflow projector. Here is a plot of the node2vec embedding for the sample dataset. 
-![Sample](Background-ex.png)
+![Sample](pics/Background-ex.png)
