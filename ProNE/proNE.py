@@ -145,7 +145,7 @@ def parse_args():
     parser.add_argument('--emb2', nargs='?',
                         default='emb/blogcatalog_enhanced.emb')
     parser.add_argument('--dimension', type=int, default=50,
-                        help='Number of dimensions. Default is 128.')
+                        help='Number of dimensions.')
     parser.add_argument('--step', type=int, default=10,
                         help='Step of recursion. Default is 10.')
     parser.add_argument('--theta', type=float, default=0.5,
@@ -180,6 +180,7 @@ def main():
     print('sparse NE time', t_2 - t_1)
     print('spectral Pro time', t_3 - t_2)
 
+    print("Saved embedding sparse, spectral to", args.emb1, args.emb2)
     save_embedding(args.emb1, features_matrix)
     save_embedding(args.emb2, embeddings_matrix)
     print('save embedding done')

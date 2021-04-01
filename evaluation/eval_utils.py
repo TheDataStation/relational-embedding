@@ -208,7 +208,7 @@ def classification_task_logr(X_train, X_test, y_train, y_test):
     model = LogisticRegression(penalty='elasticnet',
                                solver='saga',
                                l1_ratio=0.9,
-                               max_iter=2000)
+                               max_iter=500)
     model.fit(X_train, y_train)
     return show_stats(model, X_train, X_test, y_train, y_test)
 
@@ -277,7 +277,7 @@ def classification_task_nn(X_train,
 
     history = model.fit(X_train,
                         y_train,
-                        epochs=500,
+                        epochs=200,
                         verbose=0,
                         validation_data=(X_test, y_test))
     plot_tf_history(history, history_name)
@@ -304,7 +304,7 @@ def regression_task_nn(X_train, X_test, y_train, y_test, history_name=None):
 
     history = model.fit(X_train,
                         y_train,
-                        epochs=120,
+                        epochs=200,
                         verbose=0,
                         validation_data=(X_test, y_test))
     plot_tf_history_rg(history, history_name = history_name)

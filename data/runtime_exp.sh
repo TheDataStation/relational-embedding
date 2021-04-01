@@ -9,8 +9,8 @@ do
     end_preprocess=`date +%s` 
     python generate_graph.py --task sample --suffix $a
     end_graph=`date +%s` 
-    cd node2vec 
-    python src/main.py --task sample --suffix $a
+    cd ProNE 
+    python proNE.py --task sample --suffix $a
     end_train=`date +%s` 
     cd ..
     cd data 

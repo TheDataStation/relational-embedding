@@ -21,7 +21,7 @@ def word2vec2tensor(task, suffix, binary=False):
     outfiletsvmeta = tensor_path + '_metadata.tsv'
     
     if "_sparse" in suffix or "_spectral" in suffix or "_restart" in suffix:
-        suffix = "" 
+        suffix = "_".join(suffix.split("_")[:-1])
     dictionary_path = "../../graph/{}/{}{}.dict".format(task, task, suffix)
     cc = TokenDict()
     cc.load(dictionary_path)

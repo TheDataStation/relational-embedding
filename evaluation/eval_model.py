@@ -1,7 +1,9 @@
+import logging, os 
+logging.disable(logging.WARNING) 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from sklearn.model_selection import cross_val_score, train_test_split
 import json
 import argparse
-import os
 import eval_utils as EU
 import numpy as np
 import pandas as pd
@@ -11,6 +13,7 @@ import visualizer as VS
 from gensim.models import Word2Vec, KeyedVectors
 import sys
 from sklearn.linear_model import Lasso, LinearRegression
+
 
 embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
 
@@ -72,7 +75,7 @@ def evaluate_task(args):
                                 file=location_processed.split("/")[-1],
                                 model_dict=model_dict_path,
                                 model_type=method)
-        for i in [5, 20, 50, 100, 150]:
+        for i in sorted([5, 20, 50, 100, 150, model.vector_size]):
             if model.vector_size < i: continue
             model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
             x_vec_2dim = EU.vectorize_df(df_textified,
@@ -88,15 +91,18 @@ def evaluate_task(args):
                                      random_state=10)
             
             if task_type == "classification":
+                print("nn:", emb_name, i)
                 train_loss, test_loss = EU.classification_task_nn(*tests, history_name = emb_name + "_" + str(i))
+                print("logistic reg:", emb_name, i)
                 train_loss, test_loss = EU.classification_task_logr(*tests)
             else:
-                # train_loss, test_loss = EU.regression_task_nn(*tests, history_name = emb_name + "_" + str(i))
-                # print(train_loss, test_loss)
+                print("lasso:", emb_name, i)
                 train_loss, test_loss = EU.lassoRegression(*tests)
+                print("random forest:", emb_name, i)
                 train_loss, test_loss = EU.randomForestRegression(*tests)
+                print("elastic net:", emb_name, i)
                 train_loss, test_loss = EU.elasticNetRegression(*tests)
-                # print(train_loss, test_loss)
+                # train_loss, test_loss = EU.regression_task_nn(*tests, history_name = emb_name + "_" + str(i))
             training_loss.append(train_loss)
             testing_loss.append(test_loss)
         print(training_loss)

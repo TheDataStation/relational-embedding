@@ -119,20 +119,20 @@ def main(args):
 
 	learn_embeddings(walks)
 
-	# cnts = pd.DataFrame(walks).stack().value_counts()
-	# restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
-	# additional_walks = max(int(args.num_walks * 0.1), 4)
-	# print("additional walks", additional_walks)
-	# restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
-	# args.output = args.output[:-4] + "_restart.emb"
+	cnts = pd.DataFrame(walks).stack().value_counts()
+	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
+	additional_walks = max(int(args.num_walks * 0.1), 4)
+	print("additional walks", additional_walks)
+	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
+	args.output = args.output[:-4] + "_restart.emb"
 
-	# walks_save_path = "walks/" + args.input.split("/")[-1] + "_restart.txt"
-	# new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
-	# with open(walks_save_path, 'w') as f:
-	# 	for walk in new_walks: 
-	# 		f.writelines("%s " % place for place in walk)
-	# 		f.writelines("\n")
-	# learn_embeddings(new_walks)
+	walks_save_path = "walks/" + args.input.split("/")[-1] + "_restart.txt"
+	new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
+	with open(walks_save_path, 'w') as f:
+		for walk in new_walks: 
+			f.writelines("%s " % place for place in walk)
+			f.writelines("\n")
+	learn_embeddings(new_walks)
 
 if __name__ == "__main__":
 	args = parse_args()
