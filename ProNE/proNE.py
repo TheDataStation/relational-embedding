@@ -165,7 +165,7 @@ def main():
     args = parse_args()
 
     t_0 = time.time()
-    model = ProNE(args.graph, args.emb1, args.emb2, args.dimension)
+    model = ProNE(args.graph, args.emb1, args.emb2, args.dimensions)
     t_1 = time.time()
 
     features_matrix = model.pre_factorization(model.matrix0, model.matrix0)

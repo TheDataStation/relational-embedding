@@ -207,9 +207,10 @@ def classification_task_logr(X_train, X_test, y_train, y_test):
     from sklearn.linear_model import LogisticRegression
     model = LogisticRegression(penalty='elasticnet',
                                solver='saga',
-                               l1_ratio=0.9,
-                               max_iter=500)
+                               l1_ratio=0.3,
+                               max_iter=300)
     model.fit(X_train, y_train)
+    # TODO: fix behavior on ncaa ds 
     return show_stats(model, X_train, X_test, y_train, y_test)
 
 

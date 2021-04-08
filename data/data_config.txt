@@ -86,5 +86,21 @@
         "name": "restbase",
         "task_type": "regression",
         "location_processed": "./data/Restbase/generalinfo.csv"
+    },
+    "ncaa": {
+        "location": "./data/NCAA/",
+        "target_file": "base_processed.csv",
+        "target_column": "team_id1_wins",
+        "name": "ncaa",
+        "task_type": "classification",
+        "location_processed": "./data/NCAA/target.csv"
+    },
+    "ftp": {
+        "location": "./data/ftp/",
+        "target_file": "base_processed.csv",
+        "target_column": "gender",
+        "name": "ftp",
+        "task_type": "classification",
+        "location_processed": "./data/ftp/session.csv"
     }
 }

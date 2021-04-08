@@ -1,47 +1,34 @@
-from src/main import *
+import argparse
+import numpy as np
+import pandas as pd 
+from gensim.models import Word2Vec
 
-def run(weighted, num_walks, walk_length, input, output):
-	nx_G = read_graph()
-	print("Reading Done!")
-	G = node2vec.Graph(nx_G, 1, 1, weighted)
-	print("Creation Done!")
-	G.preprocess_transition_probs()
-	print("Preprocess Done!")
-	walks = G.simulate_walks(num_walks, walk_length)
-	print("Walking Done!")
-	walks_save_path = "walks/" + input.split("/")[-1] + "_" +  ".txt" 
-	with open(walks_save_path, 'w') as f:
-		for walk in walks: 
-			f.writelines("%s " % place for place in walk)
-			f.writelines("\n")
+def load_walks(path, walk_length):
+    with open(path, "r") as f:
+        content = f.readlines()
 
-	learn_embeddings(walks)
+    content = [row.split()[:walk_length] for row in content]
+    return content
 
-	cnts = pd.DataFrame(walks).stack().value_counts()
-	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
-	additional_walks = max(int(num_walks * 0.1), 4)
-	print("additional walks", additional_walks)
-	restart_walks = G.simulate_walks(additional_walks * 4, walk_length, nodes=restart_lst)
-	output = output[:-4] + "_restart.emb"
 
-	walks_save_path = "walks/" + input.split("/")[-1] + "_restart.txt"
-	new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
-	with open(walks_save_path, 'w') as f:
-		for walk in new_walks: 
-			f.writelines("%s " % place for place in walk)
-			f.writelines("\n")
-	learn_embeddings(new_walks)
+def run(path, walk_length, dim, window_size, output):
+    walks = load_walks(path, walk_length)
+    print(len(walks), len(walks[0]))
+    model = Word2Vec(walks, size=dim, window=window_size,
+                     min_count=0, sg=1, workers=8, iter=15)
+    model.wv.save_word2vec_format(output)
+    print("Model trained and saved under {}".format(output))
 
 
 def main(task, suffix):
-	file_name = task if suffix == "" else "{}_{}".format(task, suffix)
-	input = "../graph/{}/{}.edgelist".format(task, file_name)
-
-
-    for weighted in [False]:
-                    s = "{}_{}_{}_{}".format(step, mu, theta, dim)
-                    output = "./emb/{}.emb".format(file_name)
-                    run(weighted, num_walks, walk_length, input, output) 
-
+    file_name = task if suffix == "" else "{}_{}".format(task, suffix)
+    path = "./walks/{}.txt".format(file_name)
+    for walk_length in [40, 60, 80]:
+        for dim in [5, 20, 50, 100, 200]: 
+            for window_size in [5, 10]:
+                s = "{},{},{}".format(walk_length, dim, window_size)
+                output = "./emb/{}_{}.emb".format(file_name, s)
+                print(s)
+                run(path, walk_length, dim, window_size, output)
 
 main("genes", "")

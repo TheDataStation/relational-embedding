@@ -111,7 +111,9 @@ def main(args):
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
 	print("Walking Done!")
-	walks_save_path = "walks/" + args.input.split("/")[-1] + "_" +  ".txt" 
+ 
+	file_name = args.task if args.suffix == "" else "{}_{}".format(args.task, args.suffix)
+	walks_save_path = "walks/{}.txt".format(file_name)
 	with open(walks_save_path, 'w') as f:
 		for walk in walks: 
 			f.writelines("%s " % place for place in walk)
@@ -126,9 +128,9 @@ def main(args):
 	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
 	args.output = args.output[:-4] + "_restart.emb"
 
-	walks_save_path = "walks/" + args.input.split("/")[-1] + "_restart.txt"
+	walks_restart_save_path = "walks/{}_restart.txt".format(file_name)
 	new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
-	with open(walks_save_path, 'w') as f:
+	with open(walks_restart_save_path, 'w') as f:
 		for walk in new_walks: 
 			f.writelines("%s " % place for place in walk)
 			f.writelines("\n")

@@ -93,5 +93,10 @@ python eval_model.py --task sample
 It's possible to change the downstream task by altering the evaluation function to be other functions offered in **eval_util.py**.
 
 ## Visualizing embedding 
-**convert_emb_to_tsv.py** is a useful tool to convert embeddings from w2v format to tsv format. The tsv format embedding could be plotted in tensorflow projector. Here is a plot of the node2vec embedding for the sample dataset. 
+**convert_emb_to_tsv.py** is a useful tool to convert embeddings from w2v format to tsv format. The tsv format embedding could be plotted in tensorflow projector. Here is a plot of the node2vec embedding for the sample dataset. To convert the embedding file into desired tsv form, run in the **/emb** folder the following comand, 
+
+```
+python ../../convert_emb_to_tsv.py --task sample 
+```
+
 ![Sample](pics/Background-ex.png)
