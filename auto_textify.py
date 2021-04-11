@@ -6,10 +6,7 @@ from os import listdir
 from os.path import isfile, join
 import os 
 import json
-
-def all_files_in_path(path, task):
-    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv" and f.find(task) != -1]
-    return fs
+from evaluation.eval_utils import all_files_in_path
 
 class SentenceIterator: 
     def __init__(self, filepath): 

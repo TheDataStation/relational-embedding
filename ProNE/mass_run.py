@@ -32,9 +32,10 @@ def main(task, suffix):
             for theta in [0.1, 0.2, 0.5, 1]:
                 for dim in [5, 20, 50, 100, 200]:
                     s = "{}_{}_{}_{}".format(step, mu, theta, dim)
-                    emb1 = "./emb/{}_sparse{}.emb".format(file_name, s)
-                    emb2 = "./emb/{}_spectral{}.emb".format(file_name, s)
+                    emb1 = "./emb/{}_sparse.emb{}".format(file_name, s)
+                    emb2 = "./emb/{}_spectral.emb{}".format(file_name, s)
                     run(graph, emb1, emb2, dim, step, mu, theta)
 
 
-main("genes", "")
+main("ftp", "")
+main("ncaa", "")

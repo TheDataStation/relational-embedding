@@ -14,14 +14,11 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.feature_selection import SelectFromModel
 from sklearn.metrics import accuracy_score
 import json
+from eval_utils import all_files_in_path
 
 test_size = 0.1
 n_estimators = 150
 kraken_path = "../data/kraken/"
-
-def all_files_in_path(path):
-    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store" and f != "base_processed.csv"]
-    return fs
 
 def join_tables_kraken(df):
     df_joined = df 

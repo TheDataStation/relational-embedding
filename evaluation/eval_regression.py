@@ -12,7 +12,7 @@ from os.path import isfile, join
 from tqdm import tqdm
 from os import listdir
 import json
-
+from eval_utils import all_files_in_path
 from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.ensemble.forest import RandomForestClassifier
@@ -23,10 +23,6 @@ num_bins = embeddding_config["num_bins"]
 
 data_path = "../data/taxi_samll/data"
 word2vec_model_path = "../word2vec/taxi_small.bin"
-
-def all_files_in_path(path):
-    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
-    return fs
 
 def join_tables(df):
     df_joined = df 

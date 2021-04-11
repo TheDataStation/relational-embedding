@@ -28,9 +28,10 @@ def task_loader(args):
 
     # Remove target column
     df = pd.read_csv(location_processed)
-    if target_column in df.columns:
+    if target_column[0] in df.columns:
+        df = df[df[target_column[0]].notna()]
         df.to_csv(location + target_file, index=False)
-        df = df.drop(columns=[target_column])
+        df = df.drop(columns=target_column)
     df.to_csv(location_processed, index=False)
 
     # Generate textfication strategies
@@ -39,8 +40,8 @@ def task_loader(args):
 
     for path in fs:
         df = pd.read_csv(path, encoding = 'latin1', sep=',', low_memory=False)
-        if target_column in df.columns: 
-            df = df.drop(columns = [target_column])
+        if target_column[0] in df.columns: 
+            df = df.drop(columns = target_column)
             df.to_csv(path, index=False)
 
         table_name = path.split("/")[-1]

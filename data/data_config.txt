@@ -2,7 +2,7 @@
     "kraken": {
         "location": "./data/kraken/",
         "target_file": "base_processed.csv",
-        "target_column": "result",
+        "target_column": ["result"],
         "name": "kraken",
         "task_type": "classification",
         "location_processed": "./data/kraken/kraken.csv"
@@ -10,7 +10,7 @@
     "financial": {
         "location": "./data/financial/",
         "target_file": "base_processed.csv",
-        "target_column": "status",
+        "target_column": ["status"],
         "name": "financial",
         "task_type": "classification",
         "location_processed": "./data/financial/loan.csv"
@@ -18,7 +18,7 @@
     "taxi": {
         "location": "./data/taxi/",
         "target_file": "base_processed.csv",
-        "target_column": "collisions",
+        "target_column": ["collisions"],
         "name": "taxi",
         "task_type": "regression",
         "location_processed": "./data/taxi/base_data.csv"
@@ -26,7 +26,7 @@
     "sample": {
         "location": "./data/sample/",
         "target_file": "base_processed.csv",
-        "target_column": "money",
+        "target_column": ["money"],
         "name": "sample",
         "task_type": "classification",
         "location_processed": "./data/sample/base.csv"
@@ -34,7 +34,7 @@
     "genes": {
         "location": "./data/genes/",
         "target_file": "base_processed.csv",
-        "target_column": "Localization",
+        "target_column": ["Localization"],
         "name": "genes",
         "task_type": "classification",
         "location_processed": "./data/genes/Classification.csv"
@@ -42,7 +42,7 @@
     "bio": {
         "location": "./data/Biodegradability/",
         "target_file": "base_processed.csv",
-        "target_column": "logp",
+        "target_column": ["logp"],
         "name": "bio",
         "task_type": "regression",
         "location_processed": "./data/Biodegradability/molecule.csv"
@@ -50,7 +50,7 @@
     "countries": {
         "location": "./data/Countries/",
         "target_file": "base_processed.csv",
-        "target_column": "2012",
+        "target_column": ["2012"],
         "name": "countries",
         "task_type": "regression",
         "location_processed": "./data/Countries/target.csv"
@@ -58,7 +58,7 @@
     "sales": {
         "location": "./data/SalesDB/",
         "target_file": "base_processed.csv",
-        "target_column": "Quantity",
+        "target_column": ["Quantity"],
         "name": "sales",
         "task_type": "regression",
         "location_processed": "./data/SalesDB/Sales.csv"
@@ -66,7 +66,7 @@
     "tria": {
         "location": "./data/Triazine/",
         "target_file": "base_processed.csv",
-        "target_column": "activity",
+        "target_column": ["activity"],
         "name": "tria",
         "task_type": "regression",
         "location_processed": "./data/Triazine/molecule.csv"
@@ -74,7 +74,7 @@
     "ccs": {
         "location": "./data/CCS/",
         "target_file": "base_processed.csv",
-        "target_column": "Price",
+        "target_column": ["Price"],
         "name": "ccs",
         "task_type": "regression",
         "location_processed": "./data/CCS/transactions_1k.csv"
@@ -82,23 +82,23 @@
     "restbase": {
         "location": "./data/Restbase/",
         "target_file": "base_processed.csv",
-        "target_column": "review",
+        "target_column": ["review"],
         "name": "restbase",
         "task_type": "regression",
         "location_processed": "./data/Restbase/generalinfo.csv"
     },
-    "ncaa": {
-        "location": "./data/NCAA/",
+    "movielens": {
+        "location": "./data/movielens/",
         "target_file": "base_processed.csv",
-        "target_column": "team_id1_wins",
-        "name": "ncaa",
+        "target_column": ["u_gender"],
+        "name": "movielens",
         "task_type": "classification",
-        "location_processed": "./data/NCAA/target.csv"
+        "location_processed": "./data/movielens/users.csv"
     },
     "ftp": {
         "location": "./data/ftp/",
         "target_file": "base_processed.csv",
-        "target_column": "gender",
+        "target_column": ["gender"],
         "name": "ftp",
         "task_type": "classification",
         "location_processed": "./data/ftp/session.csv"

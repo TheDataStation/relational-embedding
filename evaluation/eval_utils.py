@@ -1,28 +1,29 @@
 import sys
 sys.path.append('..')
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import Normalizer
-from sklearn.linear_model import Lasso, LinearRegression, ElasticNet
-from sklearn.metrics import accuracy_score, confusion_matrix, r2_score, mean_absolute_error
-import csv
-from token_dict import TokenDict
-import pandas as pd
-import numpy as np
-from relational_embedder.data_prep import data_prep_utils as dpu
-from textification import textify_relation as tr
-from os.path import isfile, join
-from os import listdir, walk
-import json
 import tensorflow as tf
+import json
+import matplotlib.pyplot as plt
+from os import listdir, walk
+from os.path import isfile, join
+from textification import textify_relation as tr
+from relational_embedder.data_prep import data_prep_utils as dpu
+import numpy as np
+import pandas as pd
+from token_dict import TokenDict
+import csv
+from sklearn.metrics import accuracy_score, confusion_matrix, r2_score, mean_absolute_error
+from sklearn.linear_model import Lasso, LinearRegression, ElasticNet, LogisticRegression
+from sklearn.preprocessing import Normalizer
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
 
 
 def all_files_in_path(path, task):
     fs = [
         join(path, f) for f in listdir(path) if isfile(join(path, f))
-        and f != ".DS_Store" and f.find(task) != -1 and f[-4:] == ".emb"
+        and f != ".DS_Store" and f.find(task) != -1 and f.find(".emb") != -1
     ]
     return fs
 
@@ -47,7 +48,7 @@ def vectorize_df(df,
     x_vectorized = [[] for i in range(length)]
     file = file.split(".")[0]
     cc = TokenDict()
-    cc.load(model_dict)    
+    cc.load(model_dict)
     if model_type == "node2vec" or model_type == "ProNE":
         for i in range(length):
             token_row = file + "_row:" + str(i)
@@ -81,7 +82,6 @@ def textify_df(df, strategies, path):
 
 
 def plot_token_distribution(walk_path, dict_path, fig_path="walk_distri.png"):
-    import matplotlib.pyplot as plt
     plt.clf()
     with open(walk_path, "r") as f:
         ls = f.readlines()
@@ -176,6 +176,19 @@ def parse_strategy(s):
     return textification_strategy, integer_strategy
 
 
+def reduce_dim(x_vec):
+    # for i in [5, 20, 50, 100, 150]:
+    #     if model.vector_size < i: continue
+    #     model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
+    #     x_vec_2dim = EU.vectorize_df(df_textified,
+    #                                  model_2dim,
+    #                                  file=location_processed.split(
+    #                                      "/")[-1],
+    #                                  model_dict=model_dict_path,
+    #                                  model_type=method)
+    #     x_vec_2dim = x_vec_2dim.fillna(0)
+    return None
+
 ###################################################################
 #   More evaluation modules
 #
@@ -196,26 +209,31 @@ def show_stats(model, X_train, X_test, y_train, y_test, argmax=False, metric=acc
     return pscore_train, pscore_test
 
 
-def classification_task_rf(X_train, X_test, y_train, y_test, n_estimators=100):
-    from sklearn.ensemble import RandomForestClassifier
-    model = RandomForestClassifier(n_estimators=n_estimators)
-    model.fit(X_train, y_train)
-    return show_stats(model, X_train, X_test, y_train, y_test)
+def classification_task_rf(X_train, X_test, y_train, y_test):
+    rf = Pipeline([
+        ("rf", RandomForestClassifier(random_state=7))
+    ])
+    parameters = {
+        'rf__n_estimators': [10, 20, 50, 100],
+    }
+    greg = GridSearchCV(estimator=rf, param_grid=parameters, cv=2, verbose=0)
+    greg.fit(X_train, y_train)
+    return show_stats(greg, X_train, X_test, y_train, y_test)
 
 
 def classification_task_logr(X_train, X_test, y_train, y_test):
-    from sklearn.linear_model import LogisticRegression
-    model = LogisticRegression(penalty='elasticnet',
-                               solver='saga',
-                               l1_ratio=0.3,
-                               max_iter=300)
-    model.fit(X_train, y_train)
-    # TODO: fix behavior on ncaa ds 
-    return show_stats(model, X_train, X_test, y_train, y_test)
+    lr = Pipeline([
+        ("lr", LogisticRegression(random_state=7, penalty="elasticnet", solver="saga", max_iter=2000))
+    ])
+    parameters = {
+        "lr__l1_ratio": [0.1, 0.3, 0.9, 1]
+    }
+    greg = GridSearchCV(estimator=lr, param_grid=parameters, cv=2, verbose=0)
+    greg.fit(X_train, y_train)
+    return show_stats(greg, X_train, X_test, y_train, y_test)
 
 
 def plot_tf_history(history, history_name=None):
-    import matplotlib.pyplot as plt
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
     plt.title('model accuracy')
@@ -243,7 +261,6 @@ def plot_tf_history(history, history_name=None):
 
 
 def plot_tf_history_rg(history, history_name=None):
-    import matplotlib.pyplot as plt
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
     plt.title('model loss')
@@ -262,12 +279,12 @@ def classification_task_nn(X_train,
                            y_train,
                            y_test,
                            history_name=None):
-    import tensorflow as tf
     input_size = X_train.shape[1]
     ncategories = np.max(y_train) + 1
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(input_size, )),
         tf.keras.layers.Dense(64, activation=tf.nn.sigmoid),
+        # tf.keras.layers.Dense(32, activation=tf.nn.sigmoid),
         tf.keras.layers.Dense(ncategories, activation=tf.nn.softmax)
     ])
 
@@ -295,23 +312,22 @@ def regression_task_nn(X_train, X_test, y_train, y_test, history_name=None):
         #   normalized,
         tf.keras.layers.Dense(64, activation='relu',
                               input_dim=X_train.shape[1]),
-        tf.keras.layers.Dense(64, activation='relu'),
         tf.keras.layers.Dense(1)
     ])
 
-    model.compile(loss='mean_squared_error',
+    model.compile(loss='mean_absolute_error',
                   optimizer='adam',
                   metrics=['mean_absolute_error'])
 
     history = model.fit(X_train,
                         y_train,
-                        epochs=200,
+                        epochs=50,
                         verbose=0,
                         validation_data=(X_test, y_test))
-    plot_tf_history_rg(history, history_name = history_name)
+    plot_tf_history_rg(history, history_name=history_name)
     train_loss = history.history['loss'][-1]
     test_loss = model.evaluate(X_test, y_test, verbose=2)
-    return show_stats(model, X_train, X_test, y_train, y_test, argmax=True, metric=r2_score)
+    return show_stats(model, X_train, X_test, y_train, y_test, argmax=True, metric=mean_absolute_error)
 
 
 def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
@@ -326,9 +342,9 @@ def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
         'rfr__min_samples_leaf': [2, 5],
         # 'rfr__max_samples': [0.2,0.5,1],
     }
-    greg = GridSearchCV(estimator=rfr, param_grid=parameters, cv=5, verbose=0)
+    greg = GridSearchCV(estimator=rfr, param_grid=parameters, cv=2, verbose=0)
     greg.fit(X_train, y_train)
-    return show_stats(greg, X_train, X_test, y_train, y_test, metric=r2_score)
+    return show_stats(greg, X_train, X_test, y_train, y_test, metric=mean_absolute_error)
 
 
 def lassoRegression(X_train, X_test, y_train, y_test, history=None):
@@ -339,9 +355,9 @@ def lassoRegression(X_train, X_test, y_train, y_test, history=None):
         'lasso__alpha': [0.0001, 0.001, 0.01, 0.1, 0.5, 0.7],
     }
     greg = GridSearchCV(
-        estimator=lasso, param_grid=parameters, cv=5, verbose=0)
+        estimator=lasso, param_grid=parameters, cv=2, verbose=0)
     greg.fit(X_train, y_train)
-    return show_stats(greg, X_train, X_test, y_train, y_test, metric=r2_score)
+    return show_stats(greg, X_train, X_test, y_train, y_test, metric=mean_absolute_error)
 
 
 def elasticNetRegression(X_train, X_test, y_train, y_test, history=None):
@@ -354,4 +370,9 @@ def elasticNetRegression(X_train, X_test, y_train, y_test, history=None):
     }
     greg = GridSearchCV(estimator=en, param_grid=parameters, cv=5, verbose=0)
     greg.fit(X_train, y_train)
-    return show_stats(greg, X_train, X_test, y_train, y_test, metric=r2_score)
+    return show_stats(greg, X_train, X_test, y_train, y_test, metric=mean_absolute_error)
+
+def linearRegression(X_train, X_test, y_train, y_test):
+    lr = LinearRegression()
+    lr.fit(X_train, y_train)
+    return show_stats(lr, X_train, X_test, y_train, y_test, metric=mean_absolute_error)

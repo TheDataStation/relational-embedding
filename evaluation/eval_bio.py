@@ -1,6 +1,7 @@
 import sys
 sys.path.append('..')
 
+from sklearn.feature_selection import SelectKBest, f_regression
 import eval_utils as EU
 import os
 import numpy as np 
@@ -13,15 +14,14 @@ from tqdm import tqdm
 from os import listdir
 import json
 
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, mean_absolute_error
 from sklearn.preprocessing import Normalizer
 from sklearn.pipeline import Pipeline
 from sklearn import metrics
 from sklearn.model_selection import GridSearchCV
-from sklearn.linear_model import Lasso, LinearRegression
+from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.ensemble.forest import RandomForestClassifier
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from textification import textify_relation as tr
 
@@ -53,25 +53,34 @@ for c in categorical:
 
 
 def simple_regression(X_train, X_test, y_train, y_test):
-    X_train = X_train.drop(["logp"], axis = 1)
-    X_test = X_test.drop(["logp"], axis = 1)
     lr = LinearRegression()
     lr.fit(X_train, y_train)
-    train_score = lr.score(X_train, y_train)
-    test_score = lr.score(X_test, y_test)
+    y_pred = lr.predict(X_train)
+    y_test_pred = lr.predict(X_test)
+    train_score = mean_absolute_error(y_pred, y_train)
+    test_score = mean_absolute_error(y_test_pred, y_test)
 
     y_tmp = lr.predict(X_train)
     print("LR Train score: {}, Test score: {}".format(train_score, test_score))
 
+def joined_and_feature_elim_random_forest(X_train, X_test, y_train, y_test, kk):
+    fs = SelectKBest(score_func=f_regression, k=kk)
+    fs.fit(X_train, y_train)
+    selected_feat= X_train.columns[(fs.get_support())]
+    print("Num of selected features {} out of {}".format(len(selected_feat), len(X_train.columns)))
+
+    X_train_elim = X_train[selected_feat]
+    X_test_elim = X_test[selected_feat]
+    simple_regression(X_train_elim, X_test_elim, y_train, y_test)
+
 def joined_and_lasso(X_train, X_test, y_train, y_test):
-    X_train = X_train.drop(["logp"], axis = 1)
-    X_test = X_test.drop(["logp"], axis = 1)
-    
-    alpha = 0.0001
+    alpha = 0.2
     lasso = Lasso(alpha = alpha)
     lasso.fit(X_train, y_train) 
-    train_score = lasso.score(X_train, y_train)
-    test_score = lasso.score(X_test, y_test)
+    y_pred = lasso.predict(X_train)
+    y_test_pred = lasso.predict(X_test)
+    train_score = mean_absolute_error(y_pred, y_train)
+    test_score = mean_absolute_error(y_test_pred, y_test)
     coeff_used = np.sum(lasso.coef_!=0)
     print("LASSO alpha {} Train score: {}, Test score: {}".format(alpha, train_score, test_score))
     print("LASSO Num of coeff used: {}".format(coeff_used))
@@ -116,24 +125,37 @@ if __name__ == "__main__":
 
     X = df
     Y = df['logp'].values.reshape(-1, 1)
-    X_train, X_test, y_train, y_test = train_test_split(X,Y, test_size = test_size, random_state=10)
+    X_train, X_test, y_train, y_test = train_test_split(X,Y, test_size = test_size)
     
     X_joined = df_joined
     Y_joined = df_joined['logp'].values.reshape(-1, 1)
-    X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(X_joined, Y_joined, test_size = test_size, random_state=10)
+    X_train_j, X_test_j, y_train_j, y_test_j = train_test_split(X_joined, Y_joined, test_size = test_size)
     
-    # Baseline 1: simple regression 
-    print("Baseline 1: Simple Regression")
-    simple_regression(X_train, X_test, y_train, y_test)
+    X_train = X_train.drop(["logp"], axis = 1)
+    X_test = X_test.drop(["logp"], axis = 1)
+    X_train_j = X_train_j.drop(["logp"], axis = 1)
+    X_test_j = X_test_j.drop(["logp"], axis = 1)
+    
+    
+    
+    # # Baseline 1: simple regression 
+    # print("Baseline 1: Simple Regression")
+    # simple_regression(X_train, X_test, y_train, y_test)
+    # joined_and_lasso(X_train, X_test, y_train, y_test)
 
-    # Baseline 2: Join all tables & regression
-    print("Baseline 2: Joined & Regression")
-    simple_regression(X_train_j, X_test_j, y_train_j, y_test_j) 
+    # # Baseline 2: Join all tables & regression
+    # print("Baseline 2: Joined & Regression")
+    # simple_regression(X_train_j, X_test_j, y_train_j, y_test_j) 
+    # # for i in range(1, X_train_j.shape[1]):
+    #     # joined_and_feature_elim_random_forest(X_train_j, X_test_j, y_train_j, y_test_j, kk=i) 
 
-    # Baseline 3: Join all tables & LASSO
-    print("Baseline 3: Joined & Feature Selection LASSO")
-    joined_and_lasso(X_train_j, X_test_j, y_train_j, y_test_j)
+    # # Baseline 3: Join all tables & LASSO
+    # print("Baseline 3: Joined & LASSO")
+    # joined_and_lasso(X_train_j, X_test_j, y_train_j, y_test_j)
 
-    # # Baseline 4: Join all tables & RandomForest
-    # print("Baseline 3: Joined & RandomForest")
-    # randomForestRegression(X_train_j, X_test_j, y_train_j, y_test_j)
+    # # # Baseline 4: Join all tables & RandomForest
+    # # print("Baseline 3: Joined & RandomForest")
+    # # randomForestRegression(X_train_j, X_test_j, y_train_j, y_test_j)
+    # EU.regression_task_nn(X_train_j, X_test_j, y_train_j, y_test_j)
+    EU.regression_task_nn(X_train, X_test, y_train, y_test)
+    EU.regression_task_nn(X_train_j, X_test_j, y_train_j, y_test_j)

@@ -1,5 +1,6 @@
-import logging, os 
-logging.disable(logging.WARNING) 
+import logging
+import os
+logging.disable(logging.WARNING)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from sklearn.model_selection import cross_val_score, train_test_split
 import json
@@ -14,6 +15,25 @@ from gensim.models import Word2Vec, KeyedVectors
 import sys
 from sklearn.linear_model import Lasso, LinearRegression
 
+
+def check_if_eval_path(path, task, suffix):
+    # task = "genes", suffix = "": only runs genes.emb 
+    # task = "genes", suffix = "suf", only runs genes_suf.emb
+    # task = "genes", suffix = "all", run all genes_*.emb
+    if suffix == "all": return True 
+    if suffix != "" and task + "_" + suffix not in path:
+        return False 
+    if suffix == "" and task + ".emb" not in path:
+        return False
+    return True 
+
+def get_emb_name_from_path(path):
+    emb_name = path.split("/")[-1]
+    emb_name = emb_name[:emb_name.find(".emb")]
+    
+    if "_sparse" in emb_name or "_spectral" in emb_name or "_restart" in emb_name:
+        emb_name = "_".join(emb_name.split("_")[:-1])
+    return emb_name 
 
 embedding_storage = {"node2vec": '../node2vec/emb/', "ProNE": '../ProNE/emb/'}
 
@@ -44,23 +64,23 @@ def evaluate_task(args):
                              sep=',',
                              encoding='latin')
 
-    Y = full_table[target_column]
+    Y = full_table[target_column[0]]
     if task_type == "classification":
         Y = pd.Categorical(Y).codes
 
     # Set embeddings that are to be evaluated
     method = args.method
-    all_embeddings_path = EU.all_files_in_path(embedding_storage[method],
-                                               args.task)
+    all_embeddings_path = EU.all_files_in_path(
+        embedding_storage[method],
+        args.task
+    )
 
     # Run through the embedding list and do evaluation
     for path in all_embeddings_path:
-        if args.suffix != "" and args.suffix not in path: continue
-        if args.suffix == "" and args.task + "_" in path: continue
+        if check_if_eval_path(path, args.task, args.suffix) == False:
+            continue 
+        emb_name = get_emb_name_from_path(path)
         model = KeyedVectors.load_word2vec_format(path)
-        emb_name = path.split("/")[-1][:-4]
-        if "_sparse" in emb_name or "_spectral" in emb_name or "_restart" in emb_name:
-            emb_name = "_".join(emb_name.split("_")[:-1])
         model_dict_path = "../graph/{}/{}.dict".format(args.task, emb_name)
 
         print("Evaluating: dict, ", model_dict_path)
@@ -75,45 +95,31 @@ def evaluate_task(args):
                                 file=location_processed.split("/")[-1],
                                 model_dict=model_dict_path,
                                 model_type=method)
-        for i in sorted([5, 20, 50, 100, 150, model.vector_size]):
-            if model.vector_size < i: continue
-            model_2dim = EU.get_PCA_for_embedding(model, ndim=i)
-            x_vec_2dim = EU.vectorize_df(df_textified,
-                                         model_2dim,
-                                         file=location_processed.split(
-                                             "/")[-1],
-                                         model_dict=model_dict_path,
-                                         model_type=method)
-            x_vec_2dim = x_vec_2dim.fillna(0)
-            tests = train_test_split(x_vec_2dim,
-                                     Y,
-                                     test_size=test_size,
-                                     random_state=10)
-            
-            if task_type == "classification":
-                print("nn:", emb_name, i)
-                train_loss, test_loss = EU.classification_task_nn(*tests, history_name = emb_name + "_" + str(i))
-                print("logistic reg:", emb_name, i)
-                train_loss, test_loss = EU.classification_task_logr(*tests)
-            else:
-                print("lasso:", emb_name, i)
-                train_loss, test_loss = EU.lassoRegression(*tests)
-                print("random forest:", emb_name, i)
-                train_loss, test_loss = EU.randomForestRegression(*tests)
-                print("elastic net:", emb_name, i)
-                train_loss, test_loss = EU.elasticNetRegression(*tests)
-                # train_loss, test_loss = EU.regression_task_nn(*tests, history_name = emb_name + "_" + str(i))
-            training_loss.append(train_loss)
-            testing_loss.append(test_loss)
-        print(training_loss)
-        print(testing_loss)
+        tests = train_test_split(x_vec,
+                                 Y,
+                                 test_size=test_size,
+                                 random_state=10)
+        if task_type == "classification":
+            print("nn:")
+            train_loss, test_loss = EU.classification_task_nn(
+                *tests, history_name=emb_name)
+            print("logistic reg:")
+            train_loss, test_loss = EU.classification_task_logr(*tests)
+            print("Random Forest:")
+            train_loss, test_loss = EU.classification_task_rf(*tests)
+        else:
+            print("linear net:")
+            train_loss, test_loss = EU.linearRegression(*tests)
+            # print("lasso:")
+            # train_loss, test_loss = EU.lassoRegression(*tests)
+            # print("random forest:")
+            # train_loss, test_loss = EU.randomForestRegression(*tests)
+            print("elastic net:")
+            train_loss, test_loss = EU.elasticNetRegression(*tests)
+            print("neural net:")
+            train_loss, test_loss = EU.regression_task_nn(*tests)
+            print()
 
-def simple_regression(X_train, X_test, y_train, y_test):
-    lr = LinearRegression()
-    lr.fit(X_train, y_train)
-    train_score = lr.score(X_train, y_train)
-    test_score = lr.score(X_test, y_test)
-    print("LR Train score: {}, Test score: {}".format(train_score, test_score))
 
 if __name__ == "__main__":
     print("Evaluating results with model:")
@@ -123,9 +129,11 @@ if __name__ == "__main__":
                         type=str,
                         required=True,
                         help='task to be evaluated on')
-    
-    parser.add_argument('--suffix', type=str, default="", help='suffix of training experiment')
-    parser.add_argument('--method', type=str, default="node2vec", help='method of training')
+
+    parser.add_argument('--suffix', type=str, default="",
+                        help='suffix of training experiment')
+    parser.add_argument('--method', type=str,
+                        default="node2vec", help='method of training')
 
     args = parser.parse_args()
 

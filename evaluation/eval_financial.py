@@ -18,10 +18,7 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.feature_selection import SelectFromModel
 from sklearn.metrics import accuracy_score
 import json
-
-def all_files_in_path(path):
-    fs = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
-    return fs
+from eval_utils import all_files_in_path
 
 def simple_random_forest(X_train, X_test, y_train, y_test):
     rf = RandomForestClassifier(n_estimators = 200)

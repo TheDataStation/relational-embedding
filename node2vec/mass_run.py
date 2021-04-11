@@ -6,14 +6,12 @@ from gensim.models import Word2Vec
 def load_walks(path, walk_length):
     with open(path, "r") as f:
         content = f.readlines()
-
     content = [row.split()[:walk_length] for row in content]
     return content
 
 
 def run(path, walk_length, dim, window_size, output):
     walks = load_walks(path, walk_length)
-    print(len(walks), len(walks[0]))
     model = Word2Vec(walks, size=dim, window=window_size,
                      min_count=0, sg=1, workers=8, iter=15)
     model.wv.save_word2vec_format(output)
@@ -27,8 +25,9 @@ def main(task, suffix):
         for dim in [5, 20, 50, 100, 200]: 
             for window_size in [5, 10]:
                 s = "{},{},{}".format(walk_length, dim, window_size)
-                output = "./emb/{}_{}.emb".format(file_name, s)
                 print(s)
+                output = "./emb/{}.emb{}".format(file_name, s)
                 run(path, walk_length, dim, window_size, output)
 
-main("genes", "")
+main("ftp", "")
+main("ncaa", "")
