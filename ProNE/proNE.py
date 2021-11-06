@@ -28,8 +28,8 @@ class ProNE():
 
         for e in self.G.edges():
             if e[0] != e[1]:
-                matrix0[e[0], e[1]] = 1
-                matrix0[e[1], e[0]] = 1
+                matrix0[e[0], e[1]] = self.G[e[0]][e[1]]["weight"]
+                matrix0[e[1], e[0]] = self.G[e[1]][e[0]]["weight"]
         self.matrix0 = scipy.sparse.csr_matrix(matrix0)
 
     def get_embedding_rand(self, matrix):
@@ -187,4 +187,9 @@ def main():
 
 
 if __name__ == '__main__':
+    import tracemalloc
+    tracemalloc.start()
     main()
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+    tracemalloc.stop()

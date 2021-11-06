@@ -31,6 +31,14 @@
         "task_type": "classification",
         "location_processed": "./data/sample/base.csv"
     },
+    "sample_frac": {
+        "location": "./data/sample_frac/",
+        "target_file": "base_processed.csv",
+        "target_column": ["money"],
+        "name": "sample_frac",
+        "task_type": "classification",
+        "location_processed": "./data/sample_frac/base.csv"
+    },
     "genes": {
         "location": "./data/genes/",
         "target_file": "base_processed.csv",

@@ -111,6 +111,8 @@ def main(args):
 	print("Preprocess Done!")
 	walks = G.simulate_walks(args.num_walks, args.walk_length)
 	print("Walking Done!")
+	current, peak = tracemalloc.get_traced_memory()
+	print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
  
 	file_name = args.task if args.suffix == "" else "{}_{}".format(args.task, args.suffix)
 	walks_save_path = "walks/{}.txt".format(file_name)
@@ -118,25 +120,28 @@ def main(args):
 		for walk in walks: 
 			f.writelines("%s " % place for place in walk)
 			f.writelines("\n")
-
 	learn_embeddings(walks)
 
-	cnts = pd.DataFrame(walks).stack().value_counts()
-	restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
-	additional_walks = max(int(args.num_walks * 0.1), 4)
-	print("additional walks", additional_walks)
-	restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
-	args.output = args.output[:-4] + "_restart.emb"
+	# cnts = pd.DataFrame(walks).stack().value_counts()
+	# restart_lst = list(cnts[cnts < cnts.quantile(0.25)].index)
+	# additional_walks = max(int(args.num_walks * 0.1), 4)
+	# print("additional walks", additional_walks)
+	# restart_walks = G.simulate_walks(additional_walks * 4, args.walk_length, nodes=restart_lst)
+	# args.output = args.output[:-4] + "_restart.emb"
 
-	walks_restart_save_path = "walks/{}_restart.txt".format(file_name)
-	new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
-	with open(walks_restart_save_path, 'w') as f:
-		for walk in new_walks: 
-			f.writelines("%s " % place for place in walk)
-			f.writelines("\n")
-	learn_embeddings(new_walks)
+	# walks_restart_save_path = "walks/{}_restart.txt".format(file_name)
+	# new_walks = restart_walks + walks[:-additional_walks * cnts.shape[0]]
+	# with open(walks_restart_save_path, 'w') as f:
+	# 	for walk in new_walks: 
+	# 		f.writelines("%s " % place for place in walk)
+	# 		f.writelines("\n")
+	# learn_embeddings(new_walks)
 
 if __name__ == "__main__":
-	args = parse_args()
-	main(args)
-
+    import tracemalloc
+    tracemalloc.start()
+    args = parse_args()
+    main(args)
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+    tracemalloc.stop()

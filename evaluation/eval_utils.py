@@ -13,11 +13,14 @@ from token_dict import TokenDict
 import csv
 from sklearn.metrics import accuracy_score, confusion_matrix, r2_score, mean_absolute_error
 from sklearn.linear_model import Lasso, LinearRegression, ElasticNet, LogisticRegression
-from sklearn.preprocessing import Normalizer
+from sklearn.preprocessing import Normalizer, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 
 
 def all_files_in_path(path, task):
@@ -53,10 +56,10 @@ def vectorize_df(df,
         for i in range(length):
             token_row = file + "_row:" + str(i)
             x_vectorized[i] += list(model[cc.getNumForToken(token_row)])
-            # row = df[i]
-            # for j in range(len(row)):
-            #     if cc.getNumForToken(row[j]) in model_vocab:
-            #         x_vectorized[i] += list(model[cc.getNumForToken(row[j])])
+            row = df[i]
+            for j in range(len(row)):
+                if cc.getNumForToken(row[j]) in model.vocab:
+                    x_vectorized[i] += list(model[cc.getNumForToken(row[j])])
     return pd.DataFrame(x_vectorized)
 
 
@@ -201,6 +204,8 @@ def show_stats(model, X_train, X_test, y_train, y_test, argmax=False, metric=acc
     if argmax == True:
         X_pred_train = np.argmax(X_pred_train, axis=1)
         X_pred_test = np.argmax(X_pred_test, axis=1)
+    print("an pred:", y_test[:30])
+    print("my pred:", X_pred_test[:30])
     pscore_train = metric(y_train, X_pred_train)
     pscore_test = metric(y_test, X_pred_test)
     # print("Confusion Matrix:", confusion_matrix(y_test, X_pred_test))
@@ -303,31 +308,26 @@ def classification_task_nn(X_train,
     return show_stats(model, X_train, X_test, y_train, y_test, argmax=True)
 
 
-def regression_task_nn(X_train, X_test, y_train, y_test, history_name=None):
-    # from tensorflow.keras.layers.experimental import preprocessing
-    # normalizer = preprocessing.Normalization()
+def regression_task_nn(X_train, X_test, y_train, y_test, history_name=None, e=50):
+    input_size = X_train.shape[1]
+    print(input_size)
+    def baseline_model():
+        # create model
+        model = Sequential()
+        model.add(Dense(input_size, input_dim=input_size, kernel_initializer='normal', activation='relu'))
+        model.add(Dense(input_size // 2, kernel_initializer='normal', activation='relu'))
+        model.add(Dense(input_size // 4, kernel_initializer='normal', activation='relu'))
+        model.add(Dense(1, kernel_initializer='normal'))
+        # Compile model
+        model.compile(loss='mae', optimizer='adam')
+        return model
+    estimators = []
+    estimators.append(('standardize', StandardScaler()))
+    estimators.append(('mlp', KerasRegressor(build_fn=baseline_model, epochs=e, batch_size=10, verbose=1)))
+    pipeline = Pipeline(estimators)
+    pipeline.fit(X_train, y_train)
 
-    # normalized = normalizer.adapt(np.array(X_train))
-    model = tf.keras.Sequential([
-        #   normalized,
-        tf.keras.layers.Dense(64, activation='relu',
-                              input_dim=X_train.shape[1]),
-        tf.keras.layers.Dense(1)
-    ])
-
-    model.compile(loss='mean_absolute_error',
-                  optimizer='adam',
-                  metrics=['mean_absolute_error'])
-
-    history = model.fit(X_train,
-                        y_train,
-                        epochs=50,
-                        verbose=0,
-                        validation_data=(X_test, y_test))
-    plot_tf_history_rg(history, history_name=history_name)
-    train_loss = history.history['loss'][-1]
-    test_loss = model.evaluate(X_test, y_test, verbose=2)
-    return show_stats(model, X_train, X_test, y_train, y_test, argmax=True, metric=mean_absolute_error)
+    return show_stats(pipeline, X_train, X_test, y_train, y_test, metric=mean_absolute_error)
 
 
 def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
@@ -337,9 +337,6 @@ def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
     ])
     parameters = {
         'rfr__max_depth': [2, 5, 10, 20],
-        'rfr__min_samples_split': [2, 5],
-        'rfr__max_leaf_nodes': [5, 10, 20],
-        'rfr__min_samples_leaf': [2, 5],
         # 'rfr__max_samples': [0.2,0.5,1],
     }
     greg = GridSearchCV(estimator=rfr, param_grid=parameters, cv=2, verbose=0)
@@ -349,6 +346,7 @@ def randomForestRegression(X_train, X_test, y_train, y_test, history=None):
 
 def lassoRegression(X_train, X_test, y_train, y_test, history=None):
     lasso = Pipeline([
+        ("normalizer", Normalizer()),
         ("lasso", Lasso(normalize=True, random_state=7))
     ])
     parameters = {
@@ -362,7 +360,8 @@ def lassoRegression(X_train, X_test, y_train, y_test, history=None):
 
 def elasticNetRegression(X_train, X_test, y_train, y_test, history=None):
     en = Pipeline([
-        ("en", ElasticNet(normalize=True, random_state=7))
+        ("normalizer", Normalizer()),
+        ("en", ElasticNet(normalize=True, random_state=7, max_iter=100))
     ])
     parameters = {
         'en__alpha': [0.0001, 0.001, 0.01, 0.1, 0.5, 1],
