@@ -57,9 +57,9 @@ def vectorize_df(df,
             token_row = file + "_row:" + str(i)
             x_vectorized[i] += list(model[cc.getNumForToken(token_row)])
             row = df[i]
-            for j in range(len(row)):
-                if cc.getNumForToken(row[j]) in model.vocab:
-                    x_vectorized[i] += list(model[cc.getNumForToken(row[j])])
+            # for j in range(len(row)):
+            #     if cc.getNumForToken(row[j]) in model.vocab:
+            #         x_vectorized[i] += list(model[cc.getNumForToken(row[j])])
     return pd.DataFrame(x_vectorized)
 
 
@@ -77,10 +77,10 @@ def textify_df(df, strategies, path):
         for value in decoded_value:
             input[row].append(value)
 
-    # filename = "".join(table_name.split(".")[:-1])
-    # for row in range(df.shape[0]):
-    #     row_name = "{}_row:{}".format(filename, str(row))
-    #     input[row].append(row_name)
+    filename = "".join(table_name.split(".")[:-1])
+    for row in range(df.shape[0]):
+        row_name = "{}_row:{}".format(filename, str(row))
+        input[row].append(row_name)
     return input
 
 
@@ -216,12 +216,12 @@ def show_stats(model, X_train, X_test, y_train, y_test, argmax=False, metric=acc
 
 def classification_task_rf(X_train, X_test, y_train, y_test):
     rf = Pipeline([
-        ("rf", RandomForestClassifier(random_state=7))
+        ("rf", RandomForestClassifier(random_state=7, min_samples_split=5))
     ])
     parameters = {
-        'rf__n_estimators': [10, 20, 50, 100],
+        'rf__n_estimators': [10, 20, 50, 70, 100, 250],
     }
-    greg = GridSearchCV(estimator=rf, param_grid=parameters, cv=2, verbose=0)
+    greg = GridSearchCV(estimator=rf, param_grid=parameters, cv=5, verbose=0)
     greg.fit(X_train, y_train)
     return show_stats(greg, X_train, X_test, y_train, y_test)
 

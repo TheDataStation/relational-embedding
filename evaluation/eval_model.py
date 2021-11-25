@@ -100,11 +100,11 @@ def evaluate_task(args):
                                  test_size=test_size,
                                  random_state=10)
         if task_type == "classification":
-            print("nn:")
-            train_loss, test_loss = EU.classification_task_nn(
-                *tests, history_name=emb_name)
-            print("logistic reg:")
-            train_loss, test_loss = EU.classification_task_logr(*tests)
+            # print("nn:")
+            # train_loss, test_loss = EU.classification_task_nn(
+            #     *tests, history_name=emb_name)
+            # print("logistic reg:")
+            # train_loss, test_loss = EU.classification_task_logr(*tests)
             print("Random Forest:")
             train_loss, test_loss = EU.classification_task_rf(*tests)
         else:
